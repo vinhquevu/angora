@@ -1,0 +1,77 @@
+<style type="text/css">
+    .popover {
+        max-width: none;
+    }
+    .task {
+        margin-bottom: .2em;
+        padding: .2em;
+        border-radius: 0;
+    }
+</style>
+
+<h3>Repeating Tasks</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Interval (Minutes)</th>
+            <th>Tasks</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for interval, tasks in repeating_tasks.items() %}
+        <tr>
+            <td>{{interval}}</td>
+            <td>
+                {% for task in tasks %}
+                    {% include "task.html" %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<br>
+<h3>Scheduled Tasks</h3>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Time</th>
+            <th>Tasks</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for time, tasks in scheduled_tasks.items() %}
+        <tr>
+            <td>{{time}}</td>
+            <td>
+                {% for task in tasks %}
+                    {% include "task.html" %}
+                {% endfor %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script type="text/javascript">
+    // Set properties of all the popovers at once
+    $(function () {
+        $('[data-toggle="popover"]').popover({
+            html: true,
+            placement: 'auto',
+            trigger: 'manual',
+            content: function(i) { return $(this).find('div.d-none').html(); }
+        })
+    });
+
+    // A hide function for readability
+    function hide() {
+        $('[data-toggle="popover"]').popover('hide');
+    }
+
+    // Show the hidden popover on click of task
+    $('.task').click(function() {
+        hide();
+        $(this).popover('show');
+    });
+</script>

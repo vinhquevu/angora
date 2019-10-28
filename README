@@ -1,0 +1,16 @@
+(\(\
+(-.-)
+o_(")(")
+
+======
+Angora
+======
+Libraries
+Celery
+PyYaml
+
+
+Start rabbitmq
+cd /usr/local/opt/rabbitmq/sbin
+./rabbitmq-server -detached
+sudo ./rabbitmqctl stop 

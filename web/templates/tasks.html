@@ -1,0 +1,82 @@
+<style type="text/css">
+    .popover {
+        max-width: none;
+    }
+    .task {
+        margin-bottom: .2em;
+        padding: .2em;
+        border-radius: 0;
+    }
+    .badge {
+        padding: 1em;
+        border-radius: 0;
+    }
+    h5 {
+        margin: 1em 0 .2em 0;
+    }
+</style>
+
+<div class="card bg-light container-fluid">
+    <div class="card-body row">
+        <div class="col">
+            <span class="badge badge-success">Completed Successfully</span>
+            <span class="badge badge-info">Currently Executing</span>
+            <span class="badge badge-warning">Currently Replaying</span>
+            <span class="badge badge-danger">Failed</span>
+            <span class="badge badge-secondary">Never Started</span>
+        </div>
+
+        <!-- <div class="col">
+        </div> -->
+
+        <div class="col-3">
+            <input id="filter" type="text" class="form-control form-control-sm" placeholder="Filter" />
+        </div>
+    </div>
+</div>
+
+{% for key, tasks in data.items() %}
+<h5>{{ key }}</h5>
+    {% for task in tasks %}
+        {% include "task.html" %}
+    {% endfor %}
+{% endfor %}
+
+<script type="text/javascript">
+    // Search Box
+    $('#filter').keyup(function(e) {
+        if (e.keyCode == 27) {
+            this.value = '';
+        }
+
+        $('#output > button').show();
+        data = this.value.toLowerCase().split(" ");
+
+        $.each(data, function(i, v) {
+            $('#output > button').filter(function(k, j) {
+                return $(j).text().toLowerCase().indexOf(v) < 0;
+            }).hide();
+        });
+    });
+
+    // Set properties of all the popovers at once
+    $(function () {
+        $('[data-toggle="popover"]').popover({
+            html: true,
+            placement: 'auto',
+            trigger: 'manual',
+            content: function(i) { return $(this).find('div.d-none').html(); }
+        })
+    });
+
+    // A hide function for readability
+    function hide() {
+        $('[data-toggle="popover"]').popover('hide');
+    }
+
+    // Show the hidden popover on click of task
+    $('.task').click(function() {
+        hide();
+        $(this).popover('show');
+    });
+</script>

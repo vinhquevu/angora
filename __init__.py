@@ -1,0 +1,5 @@
+EXCHANGE = "angora"
+USER = "guest"
+PASSWORD = ""
+HOST = "localhost"
+PORT = "5672"

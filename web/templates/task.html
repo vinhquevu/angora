@@ -1,0 +1,77 @@
+<button
+    class="
+        task btn
+        {% if task['status'] == 'success' %}
+            btn-success
+        {% elif task['status'] == 'start' %}
+            btn-info
+        {% elif task['status'] == 'replay' %}
+            btn-warning
+        {% elif task['status'] == 'fail' %}
+            btn-danger
+        {% else %}
+            btn-secondary
+        {% endif %}"
+    data-toggle="popover">
+
+    {{ task['name'] }}
+    <br>
+    {{ task['last_run_time'] }}
+
+    <div class="d-none">
+        <div class="card">
+            <div class="card-header">
+                {{ task['name'] }}
+                <a
+                    class="float-right close"
+                    href="#"
+                    role="button"
+                    style="color: inherit;"
+                    onclick="hide();"
+                    aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </a>
+            </div>
+            <div class="card-body">
+                <table class="table table-sm">
+                    <tr>
+                        <td>Command:</td>
+                        <td>{{ task['command'] }}</td>
+                    </tr>
+                    <tr>
+                        <td>Type:</td>
+                        <td>{{ task['type'] }}</td>
+                    </tr>
+                    <tr>
+                        <td>Triggers</td>
+                        <td>{{ task['triggers']|join('<br>'|safe) }}</td>
+                    </tr>
+                    {% if 'log' in task %}
+                    <tr>
+                        <td>Log:</td>
+                        <td>{{task['log']}}</td>
+                    </tr>
+                    {% endif %}
+                    {% if 'replay' in task %}
+                    <tr>
+                        <td>Replay Count:</td>
+                        <td>{{task['replay']}}</td>
+                    </tr>
+                    {% endif %}
+                    {% if 'prod_only' in task %}
+                    <tr>
+                        <td>Production Only:</td>
+                        <td>{{task['prod_only']}}</td>
+                    </tr>
+                    {% endif %}
+                </table>
+            </div>
+            <div class="card-footer">
+                <a class="btn" href="#" role="button" onclick="get_history('{{ task['name'] }}')">History</a>
+                <a class="btn" href="#" role="button" onclick="get_workflow('{{ task['name'] }}')">Workflow</a>
+                <a class="btn" href="#" role="button" onclick="get_log('{{ task['name'] }}')">Log</a>
+                <a class="btn" href="#" role="button" onclick="get_task_params('{{ task['name'] }}')">Execute</a>
+            </div>
+        </div>
+    </div>
+</button>
