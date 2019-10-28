@@ -1,0 +1,9 @@
+__pycache__
+python3
+logs
+*.ipynb
+env.sh
+._*
+log.db
+listeners/__init__.py
+reset.sh

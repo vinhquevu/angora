@@ -1,0 +1,14 @@
+-   name: print_environment_variables
+    triggers:
+        -   shell.print.env
+    command: "env"
+    log: "$HOME/workspace/angora/logs/"
+    messages:
+        -   shell.print.message.test
+
+-   name: print_test_message
+    triggers:
+        -   shell.print.message.test
+    command: "echo 'THIS IS A TEST'"
+    log: "$HOME/workspace/angora/logs/"
+
