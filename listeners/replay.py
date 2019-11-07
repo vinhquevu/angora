@@ -11,8 +11,10 @@ def main():
         "x-dead-letter-exchange": EXCHANGE,
         "x-dead-letter-routing-key": "start",
     }
-
-    Queue("replay", "replay", queueArgs=queue_args).clear()
+    # try:
+    Queue("replay", "replay", queue_args=queue_args).clear()
+	# except NotImplementedError:
+		# pass
 
 
 if __name__ == "__main__":

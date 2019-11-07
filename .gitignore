@@ -7,3 +7,4 @@ env.sh
 log.db
 listeners/__init__.py
 reset.sh
+test/

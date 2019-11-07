@@ -9,16 +9,26 @@
         <link rel="shortcut icon" href="static/favicon.ico">
 
         <!-- Bootstrap CSS -->
-        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+        <link
+            rel="stylesheet"
+            href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+            integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO"
+            crossorigin="anonymous"
+        >
 
         <!-- fontawesome -->
-        <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.1.1/css/all.css" integrity="sha384-O8whS3fhG2OnA5Kas0Y9l3cfpmYjapjI0E4theH4iuMD+pLhbf6JI0jIMfYcK3yZ" crossorigin="anonymous">
+        <link
+            rel="stylesheet"
+            href="https://use.fontawesome.com/releases/v5.1.1/css/all.css"
+            integrity="sha384-O8whS3fhG2OnA5Kas0Y9l3cfpmYjapjI0E4theH4iuMD+pLhbf6JI0jIMfYcK3yZ"
+            crossorigin="anonymous"
+        >
 
-        <style type="text/css">
+        <!-- <style type="text/css">
             .navbtn {
                 margin-right: 1em;
             }
-        </style>
+        </style> -->
     </head>
     <body>
         <div class="container-fluid d-flex justify-content-end align-self-center">
@@ -50,8 +60,10 @@
         <script src="https://dagrejs.github.io/project/dagre-d3/latest/dagre-d3.js"></script>
 
         <script type="text/javascript">
+            $(document).ready(function() {
+                load_tasks();
+            });
             // load_dashboard();
-            load_tasks()
 
             function load_tasks() {
                 $.ajax({

@@ -13,10 +13,11 @@ from angora.listener import Queue
 
 # Celery name has to be the same as the module that contains the task.  In
 # this case it's "start"
-app = Celery("start", broker="amqp://", backend="amqp://", include="angora.listeners.start")
+app = Celery(
+    "start", broker="amqp://", backend="amqp://", include="angora.listeners.start"
+)
 app.conf.update(
-    CELERY_ACCEPT_CONTENT=['application/json'],
-    CELERY_TASK_SERIALIZER='json'
+    CELERY_ACCEPT_CONTENT=["application/json"], CELERY_TASK_SERIALIZER="json"
 )
 
 
@@ -49,11 +50,10 @@ def run(payload):
             status="success",
         )
 
-        for message in task["messages"] or []:
-            msg = Message(
-                EXCHANGE, "initialize", message, data=task["parameters"]
+        for message in task.get("messages", []):
+            Message(EXCHANGE, "initialize", message, data=task["parameters"]).send(
+                USER, PASSWORD, HOST, PORT, "initialize"
             )
-            msg.send(USER, PASSWORD, HOST, PORT, "initialize")
 
     # Failure
     else:
@@ -66,17 +66,21 @@ def run(payload):
             status="fail",
         )
 
-        # # Replay
-        # # if replay is set, decrement by 1
-        # if task.get("replay", False):
-        #     task["replay"] -= 1
-
-        # # if replay is none (infinite)
-        # # if replay is zero (since it gets decremented first)
-        # # or if replay is greater than zero
-        # if not task["replay"] or task["replay"] > 0:
-        #     msg = Message(EXCHANGE, "replay", trigger, data=task)
-        #     msg.send(USER, PASSWORD, HOST, PORT, "replay")
+        # Replay
+        # If replay is None (infinite)
+        # if replay is greater than zero
+        if task["replay"] is None:
+            print("INF")
+            Message(EXCHANGE, "replay", trigger, data=task).send(
+                USER, PASSWORD, HOST, PORT, "replay"
+            )
+        elif task["replay"] > 0:
+            print("REG")
+            Message(EXCHANGE, "replay", trigger, data=task).send(
+                USER, PASSWORD, HOST, PORT, "replay"
+            )
+            task["replay"] -= 1
+        print("DONE")
 
     return retval
 
@@ -84,15 +88,9 @@ def run(payload):
 def archive(payload, _):
     insert_message(**payload)
 
-def test(payload, _):
-    print("Start the test")
-    print(payload)
-    result = run.delay(payload)
-    return result
 
 def main():
     callbacks = [archive, lambda x, y: run.delay(x)]
-    # callbacks = [archive, test]
     Queue("start", "start").listen(callbacks)
 
 

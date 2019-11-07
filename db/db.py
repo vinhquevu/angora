@@ -143,48 +143,53 @@ def get_tasks_today():
     return [dict(zip(row.keys(), row)) for row in result]
 
 
-def getTaskLogLast(name=None):
+def get_tasks_latest():
     with _session() as session:
-        maxTime = session.query(Tasks.name, func.max(Tasks.timeStamp).label("timeStamp"))
-        maxTime = maxTime.filter(Tasks.timeStamp >= datetime.utcnow().date())
-        maxTime = maxTime.group_by(Tasks.name)
-        maxTime = maxTime.cte("max_time")
+        max_time = session.query(
+            Tasks.name, func.max(Tasks.time_stamp).label("time_stamp")
+        ).filter(
+            Tasks.time_stamp >= datetime.utcnow().date()
+        ).group_by(Tasks.name).cte()
 
-        lastRun = session.query(Tasks.__table__)
-        lastRun = lastRun.filter(Tasks.timeStamp >= datetime.utcnow().date())
-        lastRun = lastRun.join(
-            maxTime,
+        latest = session.query(
+            Tasks.__table__
+        ).join(
+            max_time,
             and_(
-                Tasks.name == maxTime.columns.name,
-                Tasks.timeStamp == maxTime.columns.timeStamp
+                Tasks.name == max_time.c.name,
+                Tasks.time_stamp == max_time.c.time_stamp
             ),
+        ).filter(
+            Tasks.time_stamp >= datetime.utcnow().date()
         )
 
-    return [dict(zip(row.keys(), row)) for row in lastRun]
-
-def clearDB():
-    with sqlite3.connect(_database) as conn:
-        conn.execute("DELETE FROM messages;")
-        conn.execute("DELETE FROM tasks;")
+    return [dict(zip(row.keys(), row)) for row in latest]
 
 
-def getMsgLog(
-    exchange=None,
-    queue=None,
-    message=None,
-    data=None,
-    time_stamp=None
-):
-    return
+# def clearDB():
+#     with sqlite3.connect(_database) as conn:
+#         conn.execute("DELETE FROM messages;")
+#         conn.execute("DELETE FROM tasks;")
 
 
-def getTaskLog(
-    name,
-    trigger,
-    command,
-    parameters,
-    log,
-    status,
-    time_stamp
-):
-    return
+# def getMsgLog(
+#     exchange=None,
+#     queue=None,
+#     message=None,
+#     data=None,
+#     time_stamp=None
+# ):
+#     return
+
+
+# def getTaskLog(
+#     name,
+#     trigger,
+#     command,
+#     parameters,
+#     log,
+#     status,
+#     time_stamp
+# ):
+#     return
+

@@ -1,5 +1,4 @@
 #! /usr/bin/env python3
-# Confidential and Proprietary Information of Hudson River Trading LLC
 
 # import sys
 import uvicorn
@@ -7,6 +6,7 @@ import uvicorn
 from collections import OrderedDict
 # from datetime import datetime, timedelta
 
+import asks
 # from jinja2 import Environment, PackageLoader
 # from wtforms.form import Form
 # from wtforms.fields.html5 import DateField
@@ -14,57 +14,57 @@ from starlette.responses import PlainTextResponse
 from starlette.templating import Jinja2Templates
 from starlette.applications import Starlette
 
-from angora.db.dal import getTaskLogToday
+from angora.db import db
 
-
+API = "localhost:55555"
 templates = Jinja2Templates(directory="templates")
 app = Starlette()
 
 
-def _addLastestStatus():
-    """
-    Found myself repeating this logic so moved ot a protected function.
-    """
-    from angora.task import Tasks
-    from datetime import datetime
-    from dateutil.tz import gettz
-    from dateutil.parser import parse
-    from dateutil.relativedelta import relativedelta
+# def _addLastestStatus():
+#     """
+#     Found myself repeating this logic so moved it a protected function.
+#     """
+#     from angora.task import Tasks
+#     from datetime import datetime
+#     from dateutil.tz import gettz
+#     from dateutil.parser import parse
+#     from dateutil.relativedelta import relativedelta
 
-    tasks = []
-    all_tasks = Tasks()
-    # I could call this function for each task but that would be multiple
-    # calls to the database
-    last_task = getTaskLogToday()
+#     tasks = []
+#     all_tasks = Tasks()
+#     # I could call this function for each task but that would be multiple
+#     # calls to the database
+#     last_task = db.get_tasks_today()
 
-    for task in all_tasks.tasks:
-        status = None
-        time_stamp = None
-        last_run_time = "Never"
+#     for task in all_tasks.tasks:
+#         status = None
+#         time_stamp = None
+#         last_run_time = "Never"
 
-        for lt in last_task:
-            if lt['name'] == task['name']:
-                status = lt['status']
-                time_stamp = lt['time_stamp']
+#         for lt in last_task:
+#             if lt['name'] == task['name']:
+#                 status = lt['status']
+#                 time_stamp = lt['time_stamp']
 
-                delta = relativedelta(
-                    datetime.utcnow(),
-                    time_stamp,
-                )
+#                 delta = relativedelta(
+#                     datetime.utcnow(),
+#                     time_stamp,
+#                 )
 
-                last_run_time = "{} hr {} min {} sec".format(
-                    delta.hours, delta.minutes, delta.seconds
-                )
+#                 last_run_time = "{} hr {} min {} sec".format(
+#                     delta.hours, delta.minutes, delta.seconds
+#                 )
 
-                break
+#                 break
 
-        task["status"] = status
-        task["time_stamp"] = time_stamp
-        task["last_run_time"] = last_run_time
+#         task["status"] = status
+#         task["time_stamp"] = time_stamp
+#         task["last_run_time"] = last_run_time
 
-        tasks.append(task)
+#         tasks.append(task)
 
-    return tasks
+#     return tasks
 
 
 @app.route("/")
@@ -76,30 +76,41 @@ async def index(request):
 
 @app.route("/tasks", methods=["POST"])
 async def tasks(request):
-    tasks = _addLastestStatus()
+    # url = f"http://{API}/tasks/status"
+    # tasks = _addLastestStatus()
 
-    def categoryFormat(x):
-        """
-        Format the category name. It's the file name in upper case and
-        spaces instead of underscores
-        """
-        return x.rstrip('.yml').replace('_', ' ').upper()
+    # def category_format(x):
+    #     """
+    #     Format the category name. It's the file name in upper case and
+    #     spaces instead of underscores
+    #     """
+    #     return x.rstrip('.yml').replace('_', ' ').upper()
 
-    # The names of the files get set to configSource and that is used to set
+    # The names of the files get set to config_source and that is used to set
     # the category.  On the Task View page all the tasks are organzied under
     # this category name.
-    categories = {categoryFormat(task["configSource"]): [] for task in tasks}
+    url = f"http://{API}/tasks/categories"
+    response = await asks.get(url)
+    response.raise_for_status()
+    categories = response.json()["data"]
+    
+    url = f"http://{API}/tasks/status"
+    response = await asks.get(url)
+    response.raise_for_status()
+    tasks = response.json()["data"]
 
+    data = {}
     for task in tasks:
-        categories[categoryFormat(task['configSource'])].append(task)
+        data.get(task.category, []).append(task)
 
-    # Order the dict before returning
+
+    # # Order the dict before returning
     context = {
-        "request": request, "data": OrderedDict(sorted(categories.items()))
+        "request": request, "data": data
     }
 
-    import pprint
-    pprint.pprint(OrderedDict(sorted(categories.items())))
+    # import pprint
+    # pprint.pprint(OrderedDict(sorted(categories.items())))
 
     return templates.TemplateResponse("tasks.html", context)
 

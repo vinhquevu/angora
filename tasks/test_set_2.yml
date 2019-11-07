@@ -1,0 +1,5 @@
+-   name: run_failure_script_1
+    triggers:
+        -   python.script.fail.1
+    command: "$HOME/workspace/angora/test/fail_test_1.py"
+    log: "$HOME/workspace/angora/logs/"

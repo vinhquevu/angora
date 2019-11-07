@@ -17,41 +17,41 @@ class Queue:
 
     def __init__(
         self,
-        queueName,
-        routingKey,
-        queueArgs=None,
+        queue_name,
+        routing_key,
+        queue_args=None,
         user="guest",
         password="guest",
         host="localhost",
         port=5672,
-        exchangeName="angora",
-        exchangeType="direct",
+        exchange_name="angora",
+        exchange_type="direct",
     ):
-        self.queueName = queueName
-        self.routingKey = routingKey
-        self.queueArgs = queueArgs
+        self.queue_name = queue_name
+        self.routing_key = routing_key
+        self.queue_args = queue_args
         self.user = user
         self.password = password
         self.host = host
         self.port = port
-        self.exchangeName = exchangeName
-        self.exchangeType = exchangeType
+        self.exchange_name = exchange_name
+        self.exchange_type = exchange_type
 
         self.__exchange = kombu.Exchange(
-            self.exchangeName, type=self.exchangeType
+            self.exchange_name, type=self.exchange_type
         )
         self.__queue = kombu.Queue(
-            self.queueName,
+            self.queue_name,
             self.__exchange,
-            self.routingKey,
-            queue_arguments=queueArgs
+            self.routing_key,
+            queue_arguments=queue_args
         )
-        self.__connectionStr = "amqp://{}:{}@{}:{}//".format(
+        self.__connection_str = "amqp://{}:{}@{}:{}//".format(
             self.user, self.password, self.host, self.port
         )
 
     def listen(self, callbacks=None):
-        with kombu.Connection(self.__connectionStr) as conn:
+        with kombu.Connection(self.__connection_str) as conn:
             with kombu.Consumer(
                 conn, [self.__queue], callbacks=callbacks, no_ack=True
             ):
@@ -63,9 +63,9 @@ class Queue:
                     print("\nExiting\n")
 
     def clear(self):
-        with kombu.Connection(self.__connectionStr) as conn:
+        with kombu.Connection(self.__connection_str) as conn:
             with kombu.Consumer(conn, [self.__queue], no_ack=True):
                 try:
                     conn.drain_events(timeout=2)
-                except socket.timeout:
+                except (socket.timeout, NotImplementedError):
                     print("\nQueue has been drained\n")

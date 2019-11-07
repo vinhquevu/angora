@@ -8,8 +8,7 @@ import shlex
 import subprocess
 from glob import glob
 
-
-CONFIGS = os.path.join(os.path.dirname(__file__), 'tasks/*.yml')
+from angora import CONFIGS
 
 
 class Task(dict):
@@ -26,10 +25,9 @@ class Task(dict):
         messages=None,
         parameters=None,
         # queue=None,
-        parentSuccess=False,
+        parent_success=False,
         replay=None,
-        configSource=None,
-        requiredArgs=None,
+        config_source=None,
     ):
         self["name"] = name
         self["command"] = command
@@ -38,10 +36,10 @@ class Task(dict):
         self["log"] = log
         self["messages"] = messages
         # self["queue"] = queue
-        self["parentSuccess"] = parentSuccess
+        self["parent_success"] = parent_success
         self["replay"] = replay
-        self["configSource"] = configSource
-        self["requiredArgs"] = requiredArgs
+        self["config_source"] = config_source
+
         if parameters:
             self["parameters"] = parameters
         else:
@@ -55,7 +53,18 @@ class Task(dict):
         else:
             super().__setitem__(key, value)
 
+    # @property
+    # def category(self):
+    #     """
+    #     Format the category name. It's the file name in upper case and
+    #     spaces instead of underscores
+    #     """
+    #     return self["config_source"].rstrip('.yml').replace('_', ' ').upper()
+
     def _expandvars(self, value):
+        """
+        If you're not a stickler on the shell=True thing, then this is not necessary.
+        """
         # Safely expand date
         pattern = re.compile(r'\$\((date.*)\)')
 
@@ -79,7 +88,6 @@ class Task(dict):
         that's frowned upon.  There's quite a bit of extra work done here
         because of that.
         """
-        print("RUNNING")
         if os.path.isdir(self["log"]):
             log = os.path.join(self["log"], f"{self['name']}.log")
         else:
@@ -112,7 +120,7 @@ class Tasks:
                 tmp = yaml.full_load(cfg)
 
                 for task in tmp:
-                    task["configSource"] = os.path.basename(config)
+                    task["config_source"] = os.path.basename(config)
 
                     self.tasks.append(Task(**task))
 
