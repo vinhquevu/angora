@@ -4,7 +4,7 @@
 import uvicorn
 
 from collections import OrderedDict
-# from datetime import datetime, timedelta
+from datetime import datetime, date
 
 import asks
 # from jinja2 import Environment, PackageLoader
@@ -16,7 +16,7 @@ from starlette.applications import Starlette
 
 from angora.db import db
 
-API = "localhost:55555"
+API = "localhost:55550"
 templates = Jinja2Templates(directory="templates")
 app = Starlette()
 
@@ -76,77 +76,28 @@ async def index(request):
 
 @app.route("/tasks", methods=["POST"])
 async def tasks(request):
-    # url = f"http://{API}/tasks/status"
-    # tasks = _addLastestStatus()
-
-    # def category_format(x):
-    #     """
-    #     Format the category name. It's the file name in upper case and
-    #     spaces instead of underscores
-    #     """
-    #     return x.rstrip('.yml').replace('_', ' ').upper()
-
-    # The names of the files get set to config_source and that is used to set
-    # the category.  On the Task View page all the tasks are organzied under
-    # this category name.
-    url = f"http://{API}/tasks/categories"
+    url = f"http://{API}/tasks/lastruntime/sorted/category"
     response = await asks.get(url)
     response.raise_for_status()
-    categories = response.json()["data"]
     
-    url = f"http://{API}/tasks/status"
-    response = await asks.get(url)
-    response.raise_for_status()
-    tasks = response.json()["data"]
-
-    data = {}
-    for task in tasks:
-        data.get(task.category, []).append(task)
-
-
-    # # Order the dict before returning
     context = {
-        "request": request, "data": data
+        "request": request, "data": response.json()["data"]
     }
-
-    # import pprint
-    # pprint.pprint(OrderedDict(sorted(categories.items())))
 
     return templates.TemplateResponse("tasks.html", context)
 
 
 @app.route("/schedule", methods=["POST"])
 async def schedule(request):
-    import re
-    tasks = _addLastestStatus()
+    url = f"http://{API}/tasks/scheduled"
+    response = await asks.get(url)
+    response.raise_for_status()
+    scheduled_tasks = response.json()["data"]
 
-    scheduled_tasks = {}
-    pattern = re.compile(r'time.\d{4}')
-
-    for task in tasks:
-        for trigger in task["triggers"]:
-            if pattern.match(trigger):
-                time = "{}:{}".format(trigger[5:7], trigger[7:9])
-
-                if time in scheduled_tasks:
-                    scheduled_tasks[time].append(task)
-                    break
-                else:
-                    scheduled_tasks[time] = [task]
-
-    repeating_tasks = {}
-    pattern = re.compile(r'time.interval.\d+')
-
-    for task in tasks:
-        for trigger in task["triggers"]:
-            if pattern.match(trigger):
-                interval = trigger.split(".")[-1]
-
-                if interval in repeating_tasks:
-                    repeating_tasks[interval].append(task)
-                    break
-                else:
-                    repeating_tasks[interval] = [task]
+    url = f"http://{API}/tasks/repeating"
+    response = await asks.get(url)
+    response.raise_for_status()
+    repeating_tasks = response.json()["data"]
 
     context = {
         "request": request,
@@ -155,13 +106,24 @@ async def schedule(request):
     }
 
     return templates.TemplateResponse(
-        'schedule.html', context
+        "schedule.html", context
     )
 
 
-@app.route("/history")
-def history(request):
-    return PlainTextResponse("TODO")
+@app.route("/history", methods=["POST"])
+async def history(request):
+    form = await request.form()
+    params = dict(form)
+    params["run_date"] = date.today().strftime("%Y-%m-%d")
+
+    url = f"http://{API}/tasks/history"
+    response = await asks.get(url, params=params)
+    response.raise_for_status()
+    history = response.json()["data"]
+
+    context = {"request": request, "history": history}
+
+    return templates.TemplateResponse("history.html", context)
 
 
 @app.route("/log")
@@ -181,7 +143,7 @@ if __name__ == "__main__":
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
-    parser.add_argument("--port", dest="port", default=55555, type=int)
+    parser.add_argument("--port", dest="port", default=55551, type=int)
     pargs = parser.parse_args()
 
     uvicorn.run(app, host="0.0.0.0", port=pargs.port, debug=True)

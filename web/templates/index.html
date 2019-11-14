@@ -113,10 +113,10 @@
                 hide();
 
                 $.ajax({
-                    url: "views/v1/history/",
+                    url: "/history",
                     type: "POST",
                     data: {
-                        'name': task_name
+                        "name": task_name
                     },
                     success: function(result) {
                         $("#dialog_box").html(result);

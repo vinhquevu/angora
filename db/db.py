@@ -1,6 +1,6 @@
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy import (
     Column,
     # Table,
@@ -12,6 +12,7 @@ from sqlalchemy import (
 )
 
 from contextlib import contextmanager
+from sqlalchemy import cast, Date
 from sqlalchemy.sql import func, and_
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
@@ -41,7 +42,7 @@ class Messages(_base):
     time_stamp = Column(
         "time_stamp",
         DateTime(),
-        default=datetime.utcnow,
+        default=datetime.now,
         index=True,
         nullable=False,
     )
@@ -59,7 +60,7 @@ class Tasks(_base):
     time_stamp = Column(
         "time_stamp",
         DateTime(),
-        default=datetime.utcnow,
+        default=datetime.now,
         index=True
     )
 
@@ -90,6 +91,7 @@ def insert_message(
         "message": message,
     }
 
+    # Set Nullable values
     if data:
         values["data"] = str(data)
 
@@ -103,7 +105,7 @@ def insert_message(
 def get_messages_today():
     with _session() as session:
         result = session.query(Messages.__table__).filter(
-            Messages.time_stamp >= datetime.utcnow().date()
+            Messages.time_stamp >= date.today()
         )
 
     return [dict(zip(row.keys(), row)) for row in result]
@@ -127,6 +129,7 @@ def insert_task(
         "status": status,
     }
 
+    # Set Nullable values
     if time_stamp:
         values["time_stamp"] = time_stamp
 
@@ -137,7 +140,7 @@ def insert_task(
 def get_tasks_today():
     with _session() as session:
         result = session.query(Tasks.__table__).filter(
-            Tasks.time_stamp >= datetime.utcnow().date()
+            Tasks.time_stamp >= date.today()
         )
 
     return [dict(zip(row.keys(), row)) for row in result]
@@ -148,10 +151,10 @@ def get_tasks_latest():
         max_time = session.query(
             Tasks.name, func.max(Tasks.time_stamp).label("time_stamp")
         ).filter(
-            Tasks.time_stamp >= datetime.utcnow().date()
+            Tasks.time_stamp >= date.today()
         ).group_by(Tasks.name).cte()
 
-        latest = session.query(
+        query = session.query(
             Tasks.__table__
         ).join(
             max_time,
@@ -160,11 +163,45 @@ def get_tasks_latest():
                 Tasks.time_stamp == max_time.c.time_stamp
             ),
         ).filter(
-            Tasks.time_stamp >= datetime.utcnow().date()
+            Tasks.time_stamp >= date.today()
         )
 
-    return [dict(zip(row.keys(), row)) for row in latest]
+    return [dict(zip(row.keys(), row)) for row in query]
 
+
+def get_tasks(
+    run_date: str = None,
+    name: str = None,
+    trigger: str = None,
+    command: str = None,
+    parameters: str = None,
+    log: str = None,
+    status: str = None,
+):
+
+    t = Tasks.__table__
+    with _session() as session:
+        query = session.query(t)
+
+        filters = []
+
+        if run_date:
+            filters.append(cast(t.c.time_stamp, Text).startswith(run_date))
+        if name:
+            filters.append(t.c.name == name)
+        if trigger:
+            filters.append(t.c.trigger == trigger)
+        if parameters:
+            filters.append(t.c.parameters == parameters)
+        if log:
+            filters.append(t.c.log == log)
+        if status:
+            filters.append(t.c.status == status)
+
+        # if filters:
+        query = query.filter(*filters).order_by(t.c.time_stamp)
+
+    return [dict(zip(row.keys(), row)) for row in query]
 
 # def clearDB():
 #     with sqlite3.connect(_database) as conn:

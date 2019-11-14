@@ -1,0 +1,17 @@
+{% block style %}{% endblock %}
+
+<div class="modal-dialog" role="document">
+    <div class="modal-content">
+        <div class="modal-header bg-light">
+            {% block header %}{% endblock %}
+        </div>
+        <div class="modal-body">
+            {% block body %}{% endblock %}
+        </div>
+        <div class="modal-footer bg-light">
+            {% block footer %}{% endblock %}
+        </div>
+    </div>
+</div>
+
+{% block scripts %}{% endblock %}

@@ -50,7 +50,8 @@ def run(payload):
             status="success",
         )
 
-        for message in task.get("messages", []):
+        # task["messages"] can be None or not set at all
+        for message in task.get("messages", []) or []:
             Message(EXCHANGE, "initialize", message, data=task["parameters"]).send(
                 USER, PASSWORD, HOST, PORT, "initialize"
             )
