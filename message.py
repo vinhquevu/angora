@@ -47,12 +47,8 @@ class Message(dict):
             raise KeyError("{} is not a valid key".format(key))
 
     def send(self, user, password, host, port, routing_key):
-        connection_str = "amqp://{}:{}@{}:{}//".format(
-            user, password, host, port
-        )
+        connection_str = "amqp://{}:{}@{}:{}//".format(user, password, host, port)
 
         with Connection(connection_str) as conn:
             producer = Producer(conn)
-            producer.publish(
-                self, exchange=self["exchange"], routing_key=routing_key
-            )
+            producer.publish(self, exchange=self["exchange"], routing_key=routing_key)

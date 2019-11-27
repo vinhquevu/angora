@@ -52,18 +52,22 @@
         </div>
 
         <!-- Optional JavaScript -->
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+        <script
+            src="https://code.jquery.com/jquery-3.4.1.min.js"
+            integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+            crossorigin="anonymous">
+        </script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
         <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
 
-        <script src="https://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+        <script src="https://d3js.org/d3.v5.min.js" charset="utf-8"></script>
         <script src="https://dagrejs.github.io/project/dagre-d3/latest/dagre-d3.js"></script>
 
         <script type="text/javascript">
             $(document).ready(function() {
-                load_tasks();
+                load_dashboard();
+                // load_tasks();
             });
-            // load_dashboard();
 
             function load_tasks() {
                 $.ajax({
@@ -93,19 +97,19 @@
                 });
             }
 
-            // function load_dashboard() {
-            //     $.ajax({
-            //         url: "views/v1/dashboard/",
-            //         type: "POST",
-            //         contentType: "application/json",
-            //         success: function(result) {
-            //             $("#output").html(result);
-            //         },
-            //         error: function() {
-            //             $("#output").html("ERROR");
-            //         },
-            //     });
-            // }
+            function load_dashboard() {
+                $.ajax({
+                    url: "/dashboard",
+                    type: "POST",
+                    contentType: "application/json",
+                    success: function(result) {
+                        $("#output").html(result);
+                    },
+                    error: function() {
+                        $("#output").html("ERROR");
+                    },
+                });
+            }
 
             // The following are shared by tasks.html and schedule.html
             // Open dialog with history info
@@ -130,68 +134,70 @@
                 });
             }
 
-            // // Open dialog with log info
-            // function get_log(task_name) {
-            //     hide();
+            // Open dialog with log info
+            function get_log(task_name) {
+                hide();
 
-            //     $.ajax({
-            //         url: "views/v1/log/",
-            //         type: "POST",
-            //         data: {
-            //             'name': task_name
-            //         },
-            //         success: function(result) {
-            //             $("#dialog_box").html(result);
-            //         },
-            //         error: function() {
-            //             $("#dialog_box").html("ERROR");
-            //         },
-            //         complete: function() {
-            //             $("#dialog_box").modal('show');
-            //         }
-            //     });
-            // }
+                $.ajax({
+                    url: "/log",
+                    type: "POST",
+                    data: {
+                        "name": task_name
+                    },
+                    success: function(result) {
+                        $("#dialog_box").html(result);
+                    },
+                    error: function() {
+                        $("#dialog_box").html("ERROR");
+                    },
+                    complete: function() {
+                        $("#dialog_box").modal('show');
+                    }
+                });
+            }
 
-            // // Open workflow page
-            // function get_workflow(task_name) {
-            //     hide();
+            // Open workflow page
+            function get_workflow(task_name) {
+                hide();
 
-            //     $.ajax({
-            //         url: "views/v1/workflow/",
-            //         type: "POST",
-            //         data: {
-            //             'name': task_name
-            //         },
-            //         success: function(result) {
-            //             $("#output").html(result);
-            //         },
-            //         error: function() {
-            //             $("#output").html("ERROR");
-            //         },
-            //     });
-            // }
+                $.ajax({
+                    url: "/workflow",
+                    type: "POST",
+                    data: {
+                        'name': task_name
+                    },
+                    success: function(result) {
+                        $("#output").html(result);
+                    },
+                    error: function() {
+                        $("#output").html("ERROR");
+                    },
+                });
+            }
 
-            // function get_task_params(task_name) {
-            //     hide();
+            // Execute task
+            // Get optional params first
+            function get_task_params(task_name) {
+                hide();
 
-            //     $.ajax({
-            //         url: "views/v1/task/params/",
-            //         type: "POST",
-            //         data: {
-            //             'name': task_name
-            //         },
-            //         success: function(result) {
-            //             $("#dialog_box").html(result);
-            //         },
-            //         error: function() {
-            //             $("#dialog_box").html("ERROR");
-            //         },
-            //         complete: function() {
-            //             $("#dialog_box").modal('show');
-            //         }
-            //     });
+                $.ajax({
+                    url: "/execute/params",
+                    type: "POST",
+                    data: {
+                        'name': task_name
+                    },
+                    success: function(result) {
+                        $("#dialog_box").html(result);
+                    },
+                    error: function() {
+                        $("#dialog_box").html("ERROR");
+                    },
+                    complete: function() {
+                        $("#dialog_box").modal('show');
+                    }
+                });
 
-            // }
+            }
         </script>
     </body>
 </html>

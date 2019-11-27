@@ -13,8 +13,10 @@ def main():
     }
     # try:
     Queue("replay", "replay", queue_args=queue_args).clear()
-	# except NotImplementedError:
-		# pass
+
+
+# except NotImplementedError:
+# pass
 
 
 if __name__ == "__main__":

@@ -1,0 +1,29 @@
+{% extends "modal.html" %}
+
+{% block style %}
+<style type="text/css">
+.modal-dialog { /* Width */
+    position: relative;
+    display: table;
+    overflow-y: auto;
+    overflow-x: auto;
+    width: auto;
+    white-space: nowrap;
+}
+</style>
+{% endblock %}
+
+{% block header %}
+{{ task_name }}
+<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+    <span aria-hidden="true">&times;</span>
+</button>
+{% endblock %}
+
+{% block body %}
+<pre><p>{{log}}</p></pre>
+{% endblock %}
+
+{% block footer %}
+<button type="button" class="btn btn-secondary" data-dismiss="modal">OK</button>
+{% endblock %}

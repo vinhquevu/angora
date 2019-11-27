@@ -34,12 +34,16 @@ class Task(dict):
         self["triggers"] = triggers
         # self["type"] = type
         self["log"] = log
-        self["messages"] = messages
         # self["queue"] = queue
         self["parent_success"] = parent_success
         self["replay"] = replay
         self["config_source"] = config_source
 
+        if messages:
+            self["messages"] = messages
+        else:
+            self["messages"] = []
+        
         if parameters:
             self["parameters"] = parameters
         else:
@@ -94,7 +98,7 @@ class Task(dict):
             log = self["log"]
 
         cmd = shlex.split(self["command"]) + self["parameters"]
-
+        print(cmd)
         p = subprocess.Popen(
             cmd,
             stdout=open(log, "ab"),
@@ -113,10 +117,20 @@ class Tasks:
     List of tasks from parsing a config file.
     """
     def __init__(self):
+        """
+        tasks
+        -----
+
+        trees
+        -----
+
+        """
+
         self.tasks = []
+        self.trees = Graph()
 
         for config in glob(CONFIGS):
-            with open(config, 'r') as cfg:
+            with open(config, "r") as cfg:
                 tmp = yaml.full_load(cfg)
 
                 for task in tmp:
@@ -124,30 +138,67 @@ class Tasks:
 
                     self.tasks.append(Task(**task))
 
+        __in = []
+        __out = []
+        for task in self.tasks:
+            # self.trees.add_node(Node(task["name"], task))
+
+            for trigger in task["triggers"]:
+                __in.append((task["name"], trigger))
+
+            for message in task["messages"]:
+                __out.append((task["name"], message))
+
+        for overtex, oedge in __out:
+            for ivertex, iedge in __in:
+                if oedge == iedge:
+                    self.trees.add_edge(Edge(iedge, overtex, ivertex))
+
     def get_tasks_by_trigger(self, trigger):
         return [task for task in self.tasks if trigger in task["triggers"]]
 
+    def get_children(self, name):
+        children = {name: []}
 
-class Node:
-    def __init__(self, name, data):
-        self._name = name
-        self._data = data
+        for edge in self.trees.edges:
+            if name == edge.source:
+                children[name].append(edge.destination)
+                children.update(self.get_children(edge.destination))
 
-    def __repr__(self):
-        return self._name
+        return children
 
-    @property
-    def name(self):
-        return self._name
 
-    @property
-    def data(self):
-        return self._data
+# class Node:
+#     def __init__(self, name, data):
+#         self.name = name
+#         self.data = data
 
+#     def __repr__(self):
+#         return self.name
 
 class Edge:
-    pass
+    def __init__(self, name, source, destination):
+        self.name = name
+        self.source = source
+        self.destination = destination
+
+    def __repr__(self):
+        return f"{self.name}:{self.source}->{self.destination}"
 
 
 class Graph:
-    pass
+    def __init__(self):
+        # self.nodes = []
+        self.edges = []
+
+    # def add_node(self, node):
+    #     self.nodes.append(node)
+
+    def add_edge(self, edge):
+        self.edges.append(edge)
+
+    def __repr__(self):
+        return (
+            # f"nodes: {str(self.nodes)}\n\n"
+            f"edges: {str(self.edges)}"
+        )

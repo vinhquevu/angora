@@ -1,0 +1,50 @@
+<style type="text/css">
+    .kpi {
+        margin-right: .2em;
+        margin-left: .2em;
+        color: white;
+    }
+    .kpi span, h1 {
+        opacity: 0.8;
+    }
+    .kpi span {
+        font-variant: small-caps;
+    }
+</style>
+
+<div class="container-fluid row">
+    <div id="executed" class="col card bg-primary kpi">
+        <div class="card-body">
+            <span>Executed</span>
+            <h1 class="display-1">{{executed}}</h1>
+        </div>
+    </div>
+
+    <div id="successful" class="col card bg-success kpi">
+        <div class="card-body">
+            <span>Successful</span>
+            <h1 class="display-1">{{successful}}</h1>
+        </div>
+    </div>
+
+    <div id="failed" class="col card bg-danger kpi">
+        <div class="card-body">
+            <span>Failed</span>
+            <h1 class="display-1">{{failed}}</h1>
+        </div>
+    </div>
+
+    <div id="replayed" class="col card bg-warning kpi">
+        <div class="card-body">
+            <span>Replayed</span>
+            <h1 class="display-1">{{replayed}}</h1>
+        </div>
+    </div>
+
+    <div id="notrun" class="col card bg-secondary kpi">
+        <div class="card-body">
+            <span>Not Run</span>
+            <h1 class="display-1">{{notrun}}</h1>
+        </div>
+    </div>
+</div>

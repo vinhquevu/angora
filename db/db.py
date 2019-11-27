@@ -137,13 +137,8 @@ def insert_task(
         session.execute(Tasks.__table__.insert(), values)
 
 
-def get_tasks_today():
-    with _session() as session:
-        result = session.query(Tasks.__table__).filter(
-            Tasks.time_stamp >= date.today()
-        )
-
-    return [dict(zip(row.keys(), row)) for row in result]
+def get_tasks_today(status: str = None):
+    return get_tasks(status=status, start_datetime=date.today())
 
 
 def get_tasks_latest():
@@ -177,29 +172,31 @@ def get_tasks(
     parameters: str = None,
     log: str = None,
     status: str = None,
+    start_datetime: datetime = None,
+    end_datetime: datetime = None,
 ):
 
-    t = Tasks.__table__
+    filters = []
+
+    if run_date:
+        filters.append(cast(Tasks.time_stamp, Text).startswith(run_date))
+    if name:
+        filters.append(Tasks.name == name)
+    if trigger:
+        filters.append(Tasks.trigger == trigger)
+    if parameters:
+        filters.append(Tasks.parameters == parameters)
+    if log:
+        filters.append(Tasks.log == log)
+    if status:
+        filters.append(Tasks.status == status)
+    if start_datetime:
+        filters.append(Tasks.time_stamp >= start_datetime)
+    if end_datetime:
+        filters.append(Tasks.time_stamp <= end_datetime)
+
     with _session() as session:
-        query = session.query(t)
-
-        filters = []
-
-        if run_date:
-            filters.append(cast(t.c.time_stamp, Text).startswith(run_date))
-        if name:
-            filters.append(t.c.name == name)
-        if trigger:
-            filters.append(t.c.trigger == trigger)
-        if parameters:
-            filters.append(t.c.parameters == parameters)
-        if log:
-            filters.append(t.c.log == log)
-        if status:
-            filters.append(t.c.status == status)
-
-        # if filters:
-        query = query.filter(*filters).order_by(t.c.time_stamp)
+        query = session.query(Tasks.__table__).filter(*filters).order_by(Tasks.time_stamp)
 
     return [dict(zip(row.keys(), row)) for row in query]
 

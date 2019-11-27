@@ -21,3 +21,4 @@
     triggers: shell.print.date.2
     command: "echo $(date '+%Y%m%d')"
     log: "$HOME/workspace/angora/logs/"
+    

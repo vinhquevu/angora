@@ -1,13 +1,15 @@
 #! /usr/bin/env python3
+import os
 import re
 import argparse
 
+from typing import List
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 
 import uvicorn
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Query
 
 from starlette.middleware.cors import CORSMiddleware
 
@@ -21,10 +23,16 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
 
 @app.get("/send")
-async def send(message, queue, routing_key, params=None):
+async def send(
+    message: str,
+    queue: str,
+    routing_key: str,
+    params: List[str] = Query(None),
+):
     """
     Send a message to Angora
     """
+    print(message, queue, routing_key, params)
     msg = Message(EXCHANGE, queue, message, data=params)
 
     try:
@@ -34,11 +42,39 @@ async def send(message, queue, routing_key, params=None):
     else:
         status = "ok"
 
-    return {"status": status, "message": message}
+    return {"status": status, "data": message}
 
+
+@app.get("/tasks")
+async def get_tasks(name=None):
+    all_tasks = Tasks().tasks
+
+    if name:
+        all_tasks = [task for task in all_tasks if task["name"] == name]
+
+    return {"data": all_tasks}
+
+
+@app.get("/tasks/today")
+async def get_tasks_today(status=None):
+    tasks = db.get_tasks_today(status=status)
+
+    # if name:
+    #     tasks = [task for task in tasks if task["name"] == name]
+
+    return {"data": tasks}
+
+@app.get("/tasks/today/notrun")
+async def get_tasks_notrun():
+    all_tasks = Tasks().tasks
+    tasks_today = {_["name"] for _ in db.get_tasks_today()}
+
+    notrun = [task for task in all_tasks if task["name"] not in tasks_today]
+
+    return {"data": notrun}
 
 @app.get("/tasks/lastruntime")
-async def get_tasks_last_run_time():
+async def get_tasks_last_run_time(name=None):
     """
     Return a list of tasks with the last run time stats.  The tasks returned
     will not be Task objects, instead the process will serialize the object
@@ -47,6 +83,9 @@ async def get_tasks_last_run_time():
     """
     all_tasks = Tasks().tasks
     last_task = db.get_tasks_latest()
+
+    if name:
+        all_tasks = [task for task in all_tasks if task["name"] == name]
 
     for task in all_tasks:
         status = None
@@ -141,10 +180,37 @@ async def get_tasks_repeating():
 
 
 @app.get("/tasks/history")
-async def get_task_history(run_date, task_name=None):
-    tasks = db.get_tasks(run_date, task_name)
+async def get_task_history(run_date, name=None):
+    tasks = db.get_tasks(run_date, name)
 
     return {"data": tasks}
+
+
+@app.get("/tasks/log")
+async def get_task_log(name):
+    """
+    This assumes that logs are files that are accessible to the api.
+    """
+    for task in Tasks().tasks:
+        if task["name"] == name:
+            if task.get("log"):
+                log = os.path.join(task["log"], f"{task['name']}.log")
+                break  # Task names are unique, you can break once you find one.
+            else:
+                return {"ok": True, "data": "TASK NOT LOGGED"}
+    else:
+        return {"ok": False, "data": "NO MATCHING TASK"}
+
+    try:
+        with open(log, "r") as _:
+            return {"ok": True, "data": "".join(_.readlines()[-100:])}
+    except IOError:
+        return {"ok": False, "data": "LOG FILE MISSING"}
+
+
+@app.get("/tasks/children")
+async def get_task_children(name):
+    return {"ok": False, "data": Tasks().get_children(name)}
 
 
 if __name__ == "__main__":

@@ -1,0 +1,59 @@
+-   name: workflow_test_1
+    triggers:
+        -   test.workflow.01
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    messages:
+        -   test.workflow.02
+        -   test.workflow.03
+
+-   name: workflow_test_2
+    triggers:
+        -   test.workflow.02
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    messages:
+        -   test.workflow.04
+
+-   name: workflow_test_3
+    triggers:
+        -   test.workflow.03
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    messages:
+        -   test.workflow.05
+        -   test.workflow.06
+
+-   name: workflow_test_4
+    triggers:
+        -   test.workflow.04
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+
+-   name: workflow_test_5
+    triggers:
+        -   test.workflow.05
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    messages:
+        -   test.workflow.07
+
+-   name: workflow_test_6
+    triggers:
+        -   test.workflow.06
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+
+-   name: workflow_test_7
+    triggers:
+        -   test.workflow.07
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    messages:
+        -   test.workflow.08
+
+-   name: workflow_test_8
+    triggers:
+        -   test.workflow.08
+    command: "env"
+    log: $HOME/workspace/angora/logs/

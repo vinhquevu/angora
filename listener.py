@@ -37,14 +37,12 @@ class Queue:
         self.exchange_name = exchange_name
         self.exchange_type = exchange_type
 
-        self.__exchange = kombu.Exchange(
-            self.exchange_name, type=self.exchange_type
-        )
+        self.__exchange = kombu.Exchange(self.exchange_name, type=self.exchange_type)
         self.__queue = kombu.Queue(
             self.queue_name,
             self.__exchange,
             self.routing_key,
-            queue_arguments=queue_args
+            queue_arguments=queue_args,
         )
         self.__connection_str = "amqp://{}:{}@{}:{}//".format(
             self.user, self.password, self.host, self.port
@@ -52,9 +50,7 @@ class Queue:
 
     def listen(self, callbacks=None):
         with kombu.Connection(self.__connection_str) as conn:
-            with kombu.Consumer(
-                conn, [self.__queue], callbacks=callbacks, no_ack=True
-            ):
+            with kombu.Consumer(conn, [self.__queue], callbacks=callbacks, no_ack=True):
                 try:
                     print("STARING LISTENER")
                     for _ in kombu.eventloop(conn):
