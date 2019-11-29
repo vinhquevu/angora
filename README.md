@@ -28,8 +28,6 @@ sudo ./rabbitmqctl stop
 
 ### Client
 
-## User Interface
-
 ## Jobs
 A job is just any command you can run on the command line.  It can be as simple as `echo "hello world"` or something more complicated.  Most likely you'll be running some script, `job.sh` or `job.py`.  Angora does not interact with the job at all, it just executes it and reads the return code.  A return code of zero will be interpreted as success and anything will be interpreted as failure.
 
@@ -64,6 +62,7 @@ One or more strings that will cause this job to execute.  You must have at least
 
 ### Schedules
 
+## User Interface
 
 ## TODO
 1. don't initialize Tasks every time, it's costly
