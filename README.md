@@ -4,7 +4,7 @@
 (-.-)
 o_(")(")
 ```
-Angora is a job execution system based on message queues.  There is no coding required to use Angora.  The jobs or tasks are Linux system commands executed via Python's subprocess module.  Jobs are configured in YAML files.  Jobs are assigned to messages and when one of those matching messages is read from a job queue, the job will execute.  Each job has the option to send additional messages on success.  Those messages and their corresponding jobs are how workflows are built.  You can interact with the Angora system via a web API and the user interface is a web application.
+Angora is a job execution system based on message queues.  There is no coding required to use Angora, although everyone is encouraged to change anything to make it their own.  The jobs, a.k.a. tasks, are Linux system commands executed via Python's subprocess module.  Jobs are configured in YAML files.  Jobs are assigned to messages and when one of those matching messages is read from a job queue, the job will execute.  Each job has the option to send additional messages on success.  Those messages and their corresponding jobs are how workflows are built.  You can interact with the Angora system via a web API and the user interface is a web application.
 
 ## Installation
 
