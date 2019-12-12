@@ -7,6 +7,7 @@ from collections import OrderedDict
 from datetime import datetime, date
 
 import asks
+
 # from jinja2 import Environment, PackageLoader
 # from wtforms.form import Form
 # from wtforms.fields.html5 import DateField
@@ -32,22 +33,22 @@ async def index(request):
 async def load_dashboard_view(request):
     url = f"http://{API}/tasks/today"
 
-    params={"status": "start"}
+    params = {"status": "start"}
     response = await asks.get(url, params=params)
     response.raise_for_status()
     executed = response.json()["data"]
 
-    params={"status": "success"}
+    params = {"status": "success"}
     response = await asks.get(url, params=params)
     response.raise_for_status()
     successful = response.json()["data"]
 
-    params={"status": "fail"}
+    params = {"status": "fail"}
     response = await asks.get(url, params=params)
     response.raise_for_status()
     failed = response.json()["data"]
 
-    params={"status": "replay"}
+    params = {"status": "replay"}
     response = await asks.get(url, params=params)
     response.raise_for_status()
     replayed = response.json()["data"]
@@ -65,7 +66,7 @@ async def load_dashboard_view(request):
         "replayed": len(replayed),
         "notrun": len(notrun),
     }
-    
+
     return templates.TemplateResponse("dashboard.html", context)
 
 
@@ -74,10 +75,8 @@ async def load_tasks_view(request):
     url = f"http://{API}/tasks/lastruntime/sorted/category"
     response = await asks.get(url)
     response.raise_for_status()
-    
-    context = {
-        "request": request, "data": response.json()["data"]
-    }
+
+    context = {"request": request, "data": response.json()["data"]}
 
     return templates.TemplateResponse("tasks.html", context)
 
@@ -88,12 +87,11 @@ async def load_task_detail(request):
     url = f"http://{API}/tasks/lastruntime"
     response = await asks.get(url, params=params)
     response.raise_for_status()
-    
-    context = {
-        "request": request, "task": response.json()["data"][0]
-    }
+
+    context = {"request": request, "task": response.json()["data"][0]}
 
     return templates.TemplateResponse("task.html", context)
+
 
 @app.route("/schedule", methods=["POST"])
 async def load_schedule_view(request):
@@ -110,12 +108,10 @@ async def load_schedule_view(request):
     context = {
         "request": request,
         "scheduled_tasks": OrderedDict(sorted(scheduled_tasks.items())),
-        "repeating_tasks": OrderedDict(sorted(repeating_tasks.items()))
+        "repeating_tasks": OrderedDict(sorted(repeating_tasks.items())),
     }
 
-    return templates.TemplateResponse(
-        "schedule.html", context
-    )
+    return templates.TemplateResponse("schedule.html", context)
 
 
 @app.route("/history", methods=["POST"])
@@ -144,7 +140,7 @@ async def log(request):
 
     context = {"request": request, "log": log}
 
-    return templates.TemplateResponse("log.html", context)    
+    return templates.TemplateResponse("log.html", context)
 
 
 @app.route("/workflow", methods=["POST"])
@@ -155,9 +151,14 @@ async def workflow(request):
     response.raise_for_status()
     children = response.json()["data"]
 
-    context = {"request": request, "children": children}
+    url = f"http://{API}/tasks/parents"
+    response = await asks.get(url, params=params)
+    response.raise_for_status()
+    parents = response.json()["data"]
 
-    return templates.TemplateResponse('workflow.html', context)
+    context = {"request": request, "children": children, "parents": parents, "task_name": params["name"]}
+
+    return templates.TemplateResponse("workflow.html", context)
 
 
 @app.route("/execute/params", methods=["POST"])
@@ -166,10 +167,8 @@ async def get_task_params(request):
     url = f"http://{API}/tasks"
     response = await asks.get(url, params=params)
     response.raise_for_status()
-    
-    context = {
-        "request": request, "task": response.json()["data"][0]
-    }
+
+    context = {"request": request, "task": response.json()["data"][0]}
 
     return templates.TemplateResponse("execute.html", context)
 
@@ -185,7 +184,7 @@ async def send_task_message(request):
 
     if form["parameters"]:
         temp_str = form["parameters"]
-        
+
         for _ in ("=", "\n", "\n\r"):
             temp_str = temp_str.replace(_, " ")
 
@@ -194,7 +193,7 @@ async def send_task_message(request):
     url = f"http://{API}/send"
     response = await asks.get(url, params=params)
     response.raise_for_status()
-    
+
     return PlainTextResponse(response.json()["data"])
 
 
@@ -202,8 +201,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(
-        description=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--port", dest="port", default=55551, type=int)
     pargs = parser.parse_args()

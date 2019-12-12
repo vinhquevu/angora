@@ -24,10 +24,7 @@ app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
 @app.get("/send")
 async def send(
-    message: str,
-    queue: str,
-    routing_key: str,
-    params: List[str] = Query(None),
+    message: str, queue: str, routing_key: str, params: List[str] = Query(None)
 ):
     """
     Send a message to Angora
@@ -64,6 +61,7 @@ async def get_tasks_today(status=None):
 
     return {"data": tasks}
 
+
 @app.get("/tasks/today/notrun")
 async def get_tasks_notrun():
     all_tasks = Tasks().tasks
@@ -72,6 +70,7 @@ async def get_tasks_notrun():
     notrun = [task for task in all_tasks if task["name"] not in tasks_today]
 
     return {"data": notrun}
+
 
 @app.get("/tasks/lastruntime")
 async def get_tasks_last_run_time(name=None):
@@ -212,6 +211,10 @@ async def get_task_log(name):
 async def get_task_children(name):
     return {"ok": False, "data": Tasks().get_children(name)}
 
+
+@app.get("/tasks/parents")
+async def get_task_children(name):
+    return {"ok": False, "data": Tasks().get_parents(name)}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

@@ -20,49 +20,73 @@
     }
 </style>
 
-<svg id="svg-canvas" class="container-fluid"></svg>
+<h3>{{task_name}}</h3>
+
+<h4>Children</h4>
+<svg id="svg_children" class="container-fluid"></svg>
+<br><br>
+<h4>Parents</h4>
+<svg id="svg_parents" class="container-fluid"></svg>
 
 <script type="text/javascript">
-    var g = new dagreD3.graphlib.Graph()
-        .setGraph({
-            "rankdir": "LR"
-        }).setDefaultEdgeLabel(function() { return {}; });
+    function draw_graph(nodes, reverse) {
+        let g = new dagreD3.graphlib.Graph()
+            .setGraph({
+                "rankdir": "LR"
+            }).setDefaultEdgeLabel(function() { return {}; });
 
-    var children = JSON.parse('{{ children | tojson | safe }}');
+        for (var node in nodes) {
+            // The width property doesn't seem to play well with css and html so
+            // all of this is some hackery to get the css/html element to fit into
+            // the node rectangle.
+            var padding_chars = "**";
+            var num_padding_chars = 20 - node.length;
+            if (num_padding_chars > 4) {
+                padding_chars = "*".repeat(num_padding_chars/2);
+            }
 
-    for (var node in children) {
-        // The width property doesn't seem to play well with css and html so
-        // all of this is some hackery to get the css/html element to fit into
-        // the node rectangle.
-        var padding_chars = "**";
-        var num_padding_chars = 20 - node.length;
-        if (num_padding_chars > 4) {
-            padding_chars = "*".repeat(num_padding_chars/2);
+            // The &nbsp is more hackery
+            g.setNode(node, {
+                "labelType": "html",
+                "label": `<div id="${node}">${padding_chars}${node}${padding_chars}</div>&nbsp;`,
+                "padding": 0,
+            });
+
+            for (var index in nodes[node]) {
+                if (reverse == true) {
+                    g.setEdge(nodes[node][index], node);
+                }
+                else {
+                    g.setEdge(node, nodes[node][index]);
+                }
+            }
         }
 
-        g.setNode(node, {
-            "labelType": "html",
-            "label": "<div id='" + node + "'>" + padding_chars + node + padding_chars + "</div>&nbsp;",
-            "padding": 0,
-        });
-
-        for (var index in children[node])
-            g.setEdge(node, children[node][index])
+        return g;
     }
+
+    var children = JSON.parse('{{ children | tojson | safe }}');
+    var parents = JSON.parse('{{ parents | tojson | safe }}');
+    var c = draw_graph(children, false);
+    var p = draw_graph(parents, true);
 
     var render = new dagreD3.render();
 
-    var svg = d3.select("svg");
-    var svgGroup = svg.append("g");
+    var svg_c = d3.select("#svg_children");
+    var svg_p = d3.select("#svg_parents");
 
-    render(d3.select("svg g"), g);
+    render(svg_c, c);
+    render(svg_p, p);
 
-    svg.attr("height", g.graph().height + 50);
-    svg.attr("viewBox", "0 -10 " + g.graph().width + " " + (g.graph().height + 20));
+    svg_c.attr("height", c.graph().height);
+    svg_c.attr("viewBox", `0 0 ${c.graph().width} ${c.graph().height}`);
+
+    svg_p.attr("height", p.graph().height);
+    svg_p.attr("viewBox", `0 0 ${p.graph().width} ${p.graph().height}`);
 
 
-    function load_task(task_name) {
-        element_id = "#" + task_name;
+    function load_task(parent_id, task_name) {
+        selector = `#${parent_id} #${task_name}`;
         $.ajax({
             url: "/task",
             type: "POST",
@@ -71,24 +95,23 @@
             },
             async: false,  // Necessary for this to work
             success: function(result) {
-                $(element_id).html(result);
+                $(selector).html(result);
             },
             error: function(result) {
-                $(element_id).html("ERROR");
+                $(selector).html("ERROR");
             },
         });
-    }
-
-    // A hide function for readability
-    function hide() {
-        $('[data-toggle="popover"]').popover('hide');
     }
 
     // So here's some fun, now the the graph is drawn, overlay each node with
     // the same task html object we use everywhere else
     $(document).ready(function () {
         for (var node in children) {
-            load_task(node);
+            load_task("svg_children", node);
+        }
+
+        for (var node in parents) {
+            load_task("svg_parents", node);
         }
 
         // Set properties of all the popovers at once
@@ -103,10 +126,8 @@
 
         // Show the hidden popover on click of task
         $('.task').click(function() {
-            hide();
+            $('[data-toggle="popover"]').popover('hide');
             $(this).popover('show');
         });
-
-
     });
 </script>

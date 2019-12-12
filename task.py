@@ -15,6 +15,7 @@ class Task(dict):
     """
     The Task object.  Stores all the task attributes and the run command to execute the task.
     """
+
     def __init__(
         self,
         name,
@@ -43,7 +44,7 @@ class Task(dict):
             self["messages"] = messages
         else:
             self["messages"] = []
-        
+
         if parameters:
             self["parameters"] = parameters
         else:
@@ -70,7 +71,7 @@ class Task(dict):
         If you're not a stickler on the shell=True thing, then this is not necessary.
         """
         # Safely expand date
-        pattern = re.compile(r'\$\((date.*)\)')
+        pattern = re.compile(r"\$\((date.*)\)")
 
         try:
             dateValue = pattern.findall(value)[0]
@@ -79,7 +80,7 @@ class Task(dict):
         else:
             date_sub = subprocess.check_output(
                 shlex.split(dateValue.replace("date", "/bin/date")),
-                universal_newlines=True
+                universal_newlines=True,
             )
             value = pattern.sub(date_sub.splitlines()[0], value)
 
@@ -116,6 +117,7 @@ class Tasks:
     """
     List of tasks from parsing a config file.
     """
+
     def __init__(self):
         """
         tasks
@@ -167,6 +169,17 @@ class Tasks:
 
         return children
 
+    def get_parents(self, name):
+        parents = {name: []}
+
+        for edge in self.trees.edges:
+            if name == edge.destination:
+                parents[name].append(edge.source)
+                parents.update(self.get_parents(edge.source))
+
+        return parents
+
+
 
 # class Node:
 #     def __init__(self, name, data):
@@ -175,6 +188,7 @@ class Tasks:
 
 #     def __repr__(self):
 #         return self.name
+
 
 class Edge:
     def __init__(self, name, source, destination):
