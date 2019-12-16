@@ -68,12 +68,13 @@ A valid command line statement.  What's valid will differ based the environment.
 This is the optional location of the log file.  The log file is simply the captured stdout of the command.  The name of the log file will always be the name of the command.  Environment variables will be expanded.
 
 #### messages
-Identical to triggers, these are the messages that the job will transmit when complete.  The idea is of course to use a message that will trigger another job.  This is how workflows are built.  One or more messages is valid and the tag is optional.
+Optional field of one or more messages that the job will transmit when complete.  These are identical to triggers.  The idea is of course to use a string that will trigger another job.  This is how workflows are built.
 
 #### replay
-An opt
+An optional field with the number of replay attempts.  A job will replay if it's exit status is anything other than zero.  If the tag is omitted a job will replay an infinite amount of times, this is considered the default behavior.  If set to any positive integer, the job will replay this many times.  If set to zero, the job will never replay.
 
 #### parent_success
+An optional file, set to `True` or `False`.  Omitting the tag is equivalent to `False`.  Checking that previous jobs have completed within a workflow may be required.  On instance is if a job may have multiple parents within a workflow.  The default behavior is for the job to execute whenever a message is read from the queue that correctly triggers that job.  In the case of multiple parents, the job will run multiple times.  If `parent_success` is set to `True` then the job will not execute unless all parent jobs are marked successful.  Another situation that may require checking parent success is if a job is executed manually but is dependent on the previous job.  Any time the parent success check fails, the job is marked as failing with no replay.
 
 ### Workflows
 
