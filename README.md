@@ -74,7 +74,7 @@ Optional field of one or more messages that the job will transmit when complete.
 An optional field with the number of replay attempts.  A job will replay if it's exit status is anything other than zero.  If the tag is omitted a job will replay an infinite amount of times, this is considered the default behavior.  If set to any positive integer, the job will replay this many times.  If set to zero, the job will never replay.
 
 #### parent_success
-An optional file, set to `True` or `False`.  Omitting the tag is equivalent to `False`.  Checking that previous jobs have completed within a workflow may be required.  On instance is if a job may have multiple parents within a workflow.  The default behavior is for the job to execute whenever a message is read from the queue that correctly triggers that job.  In the case of multiple parents, the job will run multiple times.  If `parent_success` is set to `True` then the job will not execute unless all parent jobs are marked successful.  Another situation that may require checking parent success is if a job is executed manually but is dependent on the previous job.  Any time the parent success check fails, the job is marked as failing with no replay.
+An optional file, set to `True` or `False`.  Omitting the tag is equivalent to `False`.  Checking that previous jobs have completed within a workflow may be required.  On instance is if a job may have multiple parents within a workflow.  The default behavior is for the job to execute whenever a message is read from the queue that correctly triggers that job.  In the case of multiple parents, the job will run multiple times.  If `parent_success` is set to `True` then the job will not execute unless all parent jobs are marked successful.  Another situation that may require checking parent success is if a job is executed manually but is dependent on the previous job.  Any time the parent success check fails, the job is marked as failing with no replay.  Parent success only checks the immediately preceeding parents.  If the job is depending on the entire preceeding workflow being successful, then you must set `parent_success` to `True` and all previous jobs.
 
 ### Workflows
 
@@ -91,3 +91,4 @@ An optional file, set to `True` or `False`.  Omitting the tag is equivalent to `
 6. Convert to Quart
 7. Distributed operation
 8. Replace spaces with underscores for log file
+9. Add parent success check
