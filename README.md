@@ -39,11 +39,20 @@ You need to start the Celery worker from the directory containing the celery job
     cd listeners/
     celery -A start worker --concurrency=8 --loglevel=debug -Ofair 2>&1
 
-#### concurrency
+#### --concurrency
 You'll want to set this number at something greater than one in order to facilite running jobs in parallel.  This number does not need to match the number of cores or threads you intend to use.  The default is the number of CPUs detected.  Checkout the [Celery documentation](https://docs.celeryproject.org/en/latest/userguide/workers.html) for more on concurrency vs workers and other Celery details.
+
+#### -Ofair
+This sets the scheduling strategy to fair which in most cases is required for Angora to work properly.  As of Celery 4.x this should be the default behavior.
+
 ### Server
+`./listeners/initialize.py`
 
 ### Client
+`./listeners/start.py`
+
+### Replay
+`./listeners/replay.py`
 
 ## Jobs
 A job is just any command you can run on the command line.  It can be as simple as `echo "hello world"` or something more complicated.  Most likely you'll be running some script, `job.sh` or `job.py`.  Angora does not interact with the job at all, it just executes it and reads the return code or exit status.  A return code of zero will be interpreted as success and anything will be interpreted as failure.  The return code being read is equivalent to `echo $?`.
