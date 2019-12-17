@@ -34,7 +34,13 @@ Depending on your local installation, your steps may differ but here are the bas
 You can stop RabbitMQ anytime with the command: `sudo ./rabbitmqctl stop`
 
 ### Celery
+You need to start the Celery worker from the directory containing the celery jobs to run.  In the case of Angora there is only one and it is in `start.py`.
 
+    cd listeners/
+    celery -A start worker --concurrency=8 --loglevel=debug -Ofair 2>&1
+
+#### concurrency
+You'll want to set this number at something greater than one in order to facilite running jobs in parallel.  This number does not need to match the number of cores or threads you intend to use.  The default is the number of CPUs detected.  Checkout the [Celery documentation](https://docs.celeryproject.org/en/latest/userguide/workers.html) for more on concurrency vs workers and other Celery details.
 ### Server
 
 ### Client
