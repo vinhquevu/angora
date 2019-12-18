@@ -4,7 +4,7 @@
 (-.-)
 o_(")(")
 ```
-Angora is a job execution system based on message queues.  There is no coding required to use Angora, although everyone is encouraged to change anything to make it their own.  The jobs, a.k.a. tasks, are Linux system commands executed via Python's subprocess module, i.e. `echo 'Hello World'`.  Jobs are configured in YAML files.  Jobs are assigned to messages and when one of those matching messages is read from a job queue, the job will execute.  Each job has the option to send additional messages on success.  Those messages and their corresponding jobs are how workflows are built.  You can interact with the Angora system via a web API and the user interface is a web application.
+Angora is a job execution system based on message queues.  There is no coding required to use Angora, although everyone is encouraged to make it their own.  The jobs, a.k.a. tasks, are Linux system commands executed via Python's subprocess module, i.e. `echo 'Hello World'`.  Jobs are configured in YAML files.  Jobs are assigned to messages and when one of those matching messages is read from a job queue, the job will execute.  Each job has the option to send additional messages on success.  Those messages and their corresponding jobs are how workflows are built.  You can interact with the Angora system via a web API and the user interface is a web application.
 
 ## Installation
 
@@ -54,6 +54,10 @@ This sets the scheduling strategy to fair which in most cases is required for An
 ### Replay
 `./listeners/replay.py`
 
+### Web API
+
+### Web App
+The default user interface to Angora.  The user is welcome to customize this in any way th
 ## Jobs
 A job is just any command you can run on the command line.  It can be as simple as `echo "hello world"` or something more complicated.  Most likely you'll be running some script, `job.sh` or `job.py`.  Angora does not interact with the job at all, it just executes it and reads the return code or exit status.  A return code of zero will be interpreted as success and anything will be interpreted as failure.  The return code being read is equivalent to `echo $?`.
 
