@@ -96,6 +96,57 @@ An optional field with the number of replay attempts.  A job will replay if it's
 An optional file, set to `True` or `False`.  Omitting the tag is equivalent to `False`.  Checking that previous jobs have completed within a workflow may be required.  On instance is if a job may have multiple parents within a workflow.  The default behavior is for the job to execute whenever a message is read from the queue that correctly triggers that job.  In the case of multiple parents, the job will run multiple times.  If `parent_success` is set to `True` then the job will not execute unless all parent jobs are marked successful.  Another situation that may require checking parent success is if a job is executed manually but is dependent on the previous job.  Any time the parent success check fails, the job is marked as failing with no replay.  Parent success only checks the immediately preceeding parents.  If the job is depending on the entire preceeding workflow being successful, then you must set `parent_success` to `True` and all previous jobs.
 
 ### Workflows
+At it's base, Angora isn't anything spectacular technologically.  It's a listener/callback application that matches strings.  One of it's main purposes though is to chain jobs together to build workflows.  This is all done via the configuration files.
+
+```
+-   name: step_1
+    triggers:
+        -   example.step.1
+    command: echo "HELLO"
+```
+
+The preceeding is a single simple job.  When a job completes successfully any strings set in the `messages` tag will be sent to the job queue.
+```
+-   name: step_1
+    triggers:
+        -   example.step.1
+    command: echo "HELLO"
+    messages:
+        -   example.step.2
+
+-   name: step_2
+    triggers:
+        -   example.step.2
+    command: echo "WORLD"
+```
+
+When `step_1` completes successfully, it will send `example.step.2` to the job queue.  The message is in turn matched to the trigger of job `step_2` which will then execute.
+
+A single job can trigger multiple child jobs.
+```
+-   name: step_1
+    triggers:
+        -   example.step.1
+    command: echo "HELLO WORLD"
+    messages:
+        -   example.step.2
+        -   example.step.3
+        -   example.step.4
+```
+
+Also a job can have several triggers, equating to several parent jobs.
+```
+-   name: step_4
+    triggers:
+        -   example.step.1
+        -   example.step.2
+        -   example.step.3
+    command: echo "HELLO WORLD"
+    messages:
+        -   example.step.5
+```
+
+
 
 ### Schedules
 
