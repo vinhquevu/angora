@@ -7,7 +7,6 @@ o_(")(")
 Angora is a job execution system based on message queues.  There is no coding required to use Angora, although everyone is encouraged to make it their own.  The jobs, a.k.a. tasks, are Linux system commands executed via Python's subprocess module, i.e. `echo 'Hello World'`.  Jobs are configured in YAML files.  Jobs are assigned to messages and when one of those matching messages is read from a job queue, the job will execute.  Each job has the option to send additional messages on success.  Those messages and their corresponding jobs are how workflows are built.  You can interact with the Angora system via a web API and the user interface is a web application.
 
 ## Installation
-
 ### Erlang
 You'll need to install [Erlang](https://www.erlang.org/).  Follow the instructions for your system.  Or visit the Erlang site for more details.  
 
@@ -48,8 +47,12 @@ This sets the scheduling strategy to fair which in most cases is required for An
 ### Server
 `./listeners/initialize.py`
 
+This will start up a listener for a queue named `initialize`.  If the queue does not exist it will be created by simply starting up a listener.  There are two callbacks, one logs all messages, the other searches for any job with a matching trigger.  If any are found those jobs are sent to the client queue.  You should only have one instance of the server running, even in a distributed setup.
+
 ### Client
 `./listeners/start.py`
+
+This 
 
 ### Replay
 `./listeners/replay.py`
@@ -150,10 +153,24 @@ Admittedly, there are currently no tools to help build workflows.  The only opti
 
 ### Schedules
 There are no acutal schedules in Angora.  How then do you schedule a job to run at a certain time?  Keep in mind Angora is very simple, it's waiting to read a string off a message queue, and then execute any job it can match.  In order to schedule a job, you schedule the message, not the job.  The simplest way of doing this is using crontab.  We interface with Angora via a web API, so we're going to cron a curl command.
-`*/5 * 1-5 * * curl http://angora?send=time_0100`
-    
+```
+*/5 * 1-5 * * curl -d "msg=time.`date +'\%H\%M'`" "http://angora/send"
+```
+Basically, at 1:05AM, this command will send a message of `time.0105` to the queue to be processed.  Any job with with that tirgger will then execute.  There, that's scheduling.  Remember, you can have as many jobs with the same trigger as you want, so the same message of `time.0105` can trigger 100 different jobs.
+
+It's not just specific times that you can apply this method.  You can send the same message at set intervals and thus create a repeating task.
+```
+*/30 * 1-5 * * curl -d "msg=time.interval.30"" "http://angora/send"
+```
+This message will be sent every 30 minutes, and thus any job with `time.interval.30` as a trigger will run every 30 minutes.
+
+A philosophical note, many may not agree with using crontab in this way.  "What's the point of a job orchestration system if I still have to use crontab?"  Yeah, I get that.  But I prefer to keep things simple.  As I mentioned before, Angora is at it's core, a listener/callback application.  Why program a scheduling application when I have a very reliable one in crontab already?
 
 ## User Interface
+
+## Distributed Setup
+COMING SOON
+
 
 ## TODO
 1. don't initialize Tasks every time, it's costly
