@@ -55,9 +55,9 @@ This sets the scheduling strategy to fair which in most cases is required for An
 `./listeners/replay.py`
 
 ### Web API
-
+A web API written using FastAPI.  Interfacing with Angora is meant to occur through the API, although it is not a requirement.
 ### Web App
-The default user interface to Angora.  The user is welcome to customize this in any way th
+The default user interface to Angora.  The user is welcome to customize this in any way they see fit.
 ## Jobs
 A job is just any command you can run on the command line.  It can be as simple as `echo "hello world"` or something more complicated.  Most likely you'll be running some script, `job.sh` or `job.py`.  Angora does not interact with the job at all, it just executes it and reads the return code or exit status.  A return code of zero will be interpreted as success and anything will be interpreted as failure.  The return code being read is equivalent to `echo $?`.
 
@@ -146,11 +146,12 @@ Also a job can have several triggers, equating to several parent jobs.
         -   example.step.5
 ```
 
-Admittedly, there are currently no tools to help build workflows other than manually via the configuration file.  The default web application has a view. . .
-
-
+Admittedly, there are currently no tools to help build workflows.  The only option is to manually build them via the configuration files.  The web application has a method of viewing workflows.  The user is encouraged to use this to aid in the building of any workflows.
 
 ### Schedules
+There are no acutal schedules in Angora.  How then do you schedule a job to run at a certain time?  Keep in mind Angora is very simple, it's waiting to read a string off a message queue, and then execute any job it can match.  In order to schedule a job, you schedule the message, not the job.  The simplest way of doing this is using crontab.  We interface with Angora via a web API, so we're going to cron a curl command.
+`*/5 * 1-5 * * curl http://angora?send=time_0100`
+    
 
 ## User Interface
 
