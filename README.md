@@ -33,7 +33,7 @@ Depending on your local installation, your steps may differ but here are the bas
 You can stop RabbitMQ anytime with the command: `sudo ./rabbitmqctl stop`
 
 ### Celery
-You need to start the Celery worker from the directory containing the celery jobs to run.  In the case of Angora there is only one and it is in `start.py`.
+You need to start the Celery worker from the directory containing the celery jobs to run.  In the case of Angora there is only one and it is in `start.py`.  You need to start a Celery worker on each client.
 
     cd listeners/
     celery -A start worker --concurrency=8 --loglevel=debug -Ofair 2>&1
@@ -47,15 +47,17 @@ This sets the scheduling strategy to fair which in most cases is required for An
 ### Server
 `./listeners/initialize.py`
 
-This will start up a listener for a queue named `initialize`.  If the queue does not exist it will be created by simply starting up a listener.  There are two callbacks, one logs all messages, the other searches for any job with a matching trigger.  If any are found those jobs are sent to the client queue.  You should only have one instance of the server running, even in a distributed setup.
+This will start up a listener for a queue named `initialize`.  If the queue does not exist it will be created by simply starting up a listener.  There are two callbacks, one logs all messages, the other searches for any job with a matching trigger.  If any are found, those jobs are sent to the client queue.  You should only have one instance of the server running, even in a distributed setup.
 
 ### Client
 `./listeners/start.py`
 
-This 
+This will start up a listener for a queue named `start`.  If the queue does not exist it will be created by simply starting up a listener.  There is one callback which executes the given job.
 
 ### Replay
 `./listeners/replay.py`
+
+This will create a queue named `replay` if it does not exist.  If the queue does exist it will clear that queue.  You must run this at least once when starting up an instance of Angora for the replay feature to work.
 
 ### Web API
 A web API written using FastAPI.  Interfacing with Angora is meant to occur through the API, although it is not a requirement.
@@ -167,6 +169,7 @@ This message will be sent every 30 minutes, and thus any job with `time.interval
 A philosophical note, many may not agree with using crontab in this way.  "What's the point of a job orchestration system if I still have to use crontab?"  Yeah, I get that.  But I prefer to keep things simple.  As I mentioned before, Angora is at it's core, a listener/callback application.  Why program a scheduling application when I have a very reliable one in crontab already?
 
 ## User Interface
+The user interface is a basic web application.  It's written using Starlette and Bootstrap 4.  Here you can view basic job statuses, execute jobs manually, view schedules, and view workflows.  Screenshots coming soon.
 
 ## Distributed Setup
 COMING SOON
