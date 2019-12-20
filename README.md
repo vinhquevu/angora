@@ -8,7 +8,7 @@ Angora is a job execution system based on message queues.  There is no coding re
 
 ## Installation
 ### Erlang
-You'll need to install [Erlang](https://www.erlang.org/).  Follow the instructions for your system.  Or visit the Erlang site for more details.  
+You'll need to install [Erlang](https://www.erlang.org/).  Follow the instructions for your system or visit the Erlang site for more details.  
 
 For Homebrew on OS X: `brew install erlang`  
 For MacPorts on OS X: `port install erlang`  
@@ -183,5 +183,6 @@ COMING SOON
 5. Change app.route to post?
 6. Convert to Quart
 7. Distributed operation
-8. Replace spaces with underscores for log file
+8. Replace spaces with underscores, lowercase only, for log file
 9. Add parent success check
+10. Allow .yaml and .yml
