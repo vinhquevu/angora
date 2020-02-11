@@ -6,7 +6,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-        <link rel="shortcut icon" href="static/favicon.ico">
+        <!-- <link rel="shortcut icon" href="static/favicon.ico"> -->
+        <link rel="shortcut icon" href="static/rabbit.png">
 
         <!-- Bootstrap CSS -->
         <link
@@ -19,23 +20,58 @@
         <!-- fontawesome -->
         <link
             rel="stylesheet"
-            href="https://use.fontawesome.com/releases/v5.1.1/css/all.css"
-            integrity="sha384-O8whS3fhG2OnA5Kas0Y9l3cfpmYjapjI0E4theH4iuMD+pLhbf6JI0jIMfYcK3yZ"
+            href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.11.2/css/all.min.css"
             crossorigin="anonymous"
         >
 
-        <!-- <style type="text/css">
+        <style type="text/css">
             .navbtn {
-                margin-right: 1em;
+                margin-right: .5em;
             }
-        </style> -->
+        </style>
     </head>
     <body>
         <div class="container-fluid d-flex justify-content-end align-self-center">
-            <button type="button" class="btn navbtn" onclick="load_dashboard()"><i class="fas fa-home fa-lg"></i></button>
-            <button type="button" class="btn navbtn" onclick="load_tasks()"><i class="fas fa-th fa-lg"></i></button>
-            <button type="button" class="btn navbtn" onclick="load_schedule()"><i class="fas fa-clock fa-lg"></i></button>
-            <button type="button" class="btn btn-danger navbtn"><i class="fas fa-trash-alt fa-lg"></i></button>
+            <button
+                type="button"
+                class="btn navbtn"
+                onclick="load_output('dashboard')"
+                title="Dashboard"
+                data-toggle="tooltip"
+                data-placement="bottom"
+            >
+                <i class="fas fa-home fa-lg"></i>
+            </button>
+            <button
+                type="button"
+                class="btn navbtn"
+                onclick="load_output('tasks')"
+                title="Task List"
+                data-toggle="tooltip"
+                data-placement="bottom"
+            >
+                <i class="fas fa-th fa-lg"></i>
+            </button>
+            <button
+                type="button"
+                class="btn navbtn"
+                onclick="load_output('schedule')"
+                title="Schedule"
+                data-toggle="tooltip"
+                data-placement="bottom"
+            >
+                <i class="fas fa-clock fa-lg"></i>
+            </button>
+            <button
+                type="button"
+                class="btn navbtn"
+                onclick="load_output('management')"
+                title="Managment Tools"
+                data-toggle="tooltip"
+                data-placement="bottom"
+            >
+                <i class="fas fa-tools fa-lg"></i>
+            </button>
         </div>
         <br>
 
@@ -65,13 +101,14 @@
 
         <script type="text/javascript">
             $(document).ready(function() {
-                load_dashboard();
-                // load_tasks();
+                load_output("dashboard");
+                $('[data-toggle="tooltip"]').tooltip({trigger : "hover"});
             });
 
-            function load_tasks() {
+            
+            function load_output(url) {
                 $.ajax({
-                    url: "/tasks",
+                    url: `/${url}`,
                     type: "POST",
                     contentType: "application/json",
                     success: function(result) {
@@ -83,44 +120,15 @@
                 });
             }
 
-            function load_schedule() {
-                $.ajax({
-                    url: "/schedule",
-                    type: "POST",
-                    contentType: "application/json",
-                    success: function(result) {
-                        $("#output").html(result);
-                    },
-                    error: function() {
-                        $("#output").html("ERROR");
-                    },
-                });
-            }
-
-            function load_dashboard() {
-                $.ajax({
-                    url: "/dashboard",
-                    type: "POST",
-                    contentType: "application/json",
-                    success: function(result) {
-                        $("#output").html(result);
-                    },
-                    error: function() {
-                        $("#output").html("ERROR");
-                    },
-                });
-            }
-
-            // The following are shared by tasks.html and schedule.html
-            // Open dialog with history info
-            function get_history(task_name) {
+            
+            function exec_task_proc_modal(url, task_name) {
                 hide();
 
                 $.ajax({
-                    url: "/history",
+                    url: `/task/${url}`,
                     type: "POST",
                     data: {
-                        "name": task_name
+                        'name': task_name
                     },
                     success: function(result) {
                         $("#dialog_box").html(result);
@@ -134,34 +142,14 @@
                 });
             }
 
-            // Open dialog with log info
-            function get_log(task_name) {
-                hide();
-
-                $.ajax({
-                    url: "/log",
-                    type: "POST",
-                    data: {
-                        "name": task_name
-                    },
-                    success: function(result) {
-                        $("#dialog_box").html(result);
-                    },
-                    error: function() {
-                        $("#dialog_box").html("ERROR");
-                    },
-                    complete: function() {
-                        $("#dialog_box").modal('show');
-                    }
-                });
-            }
 
             // Open workflow page
+            // Similar to load_output but with an additional argument
             function get_workflow(task_name) {
                 hide();
 
                 $.ajax({
-                    url: "/workflow",
+                    url: "/task/workflow",
                     type: "POST",
                     data: {
                         'name': task_name
@@ -175,29 +163,11 @@
                 });
             }
 
-            // Execute task
-            // Get optional params first
-            function get_task_params(task_name) {
-                hide();
-
-                $.ajax({
-                    url: "/execute/params",
-                    type: "POST",
-                    data: {
-                        'name': task_name
-                    },
-                    success: function(result) {
-                        $("#dialog_box").html(result);
-                    },
-                    error: function() {
-                        $("#dialog_box").html("ERROR");
-                    },
-                    complete: function() {
-                        $("#dialog_box").modal('show');
-                    }
-                });
-
+            
+            function clear_replay() {
+                alert("click");
             }
+
         </script>
     </body>
 </html>

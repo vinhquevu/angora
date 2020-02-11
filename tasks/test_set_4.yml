@@ -1,11 +1,13 @@
 -   name: no_log
     triggers:
         -   time.1300
+        -   log.none
     command: "env"
 
 
 -   name: missing_log
     triggers:
         -   time.1500
+        -   log.missing
     command: "env"
     log: "$HOME/workspace/angora/logs/"

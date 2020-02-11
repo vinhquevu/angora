@@ -11,6 +11,10 @@ _tasks = Tasks()
 
 
 def parse_task(payload, _):
+    # if payload["message"] == "management_reload_tasks":
+    #     _tasks.reload()
+    #     return
+
     tasks = _tasks.get_tasks_by_trigger(payload["message"])
 
     for task in tasks:

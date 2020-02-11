@@ -31,7 +31,6 @@ def _session():
     yield session
     session.close()
 
-
 class Messages(_base):
     __tablename__ = "messages"
     message_id = Column("id", Integer, primary_key=True)
@@ -141,13 +140,16 @@ def get_tasks_today(status: str = None):
     return get_tasks(status=status, start_datetime=date.today())
 
 
-def get_tasks_latest():
+def get_tasks_latest(name: str = None):
+    filters = [Tasks.time_stamp >= date.today()]
+
+    if name:
+        filters.append(Tasks.name == name)
+
     with _session() as session:
         max_time = session.query(
             Tasks.name, func.max(Tasks.time_stamp).label("time_stamp")
-        ).filter(
-            Tasks.time_stamp >= date.today()
-        ).group_by(Tasks.name).cte()
+        ).filter(*filters).group_by(Tasks.name).cte()
 
         query = session.query(
             Tasks.__table__

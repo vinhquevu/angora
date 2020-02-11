@@ -67,10 +67,38 @@
                 </table>
             </div>
             <div class="card-footer">
-                <a class="btn" href="#" role="button" onclick="get_history('{{ task['name'] }}')">History</a>
-                <a class="btn" href="#" role="button" onclick="get_workflow('{{ task['name'] }}')">Workflow</a>
-                <a class="btn" href="#" role="button" onclick="get_log('{{ task['name'] }}')">Log</a>
-                <a class="btn" href="#" role="button" onclick="get_task_params('{{ task['name'] }}')">Execute</a>
+                <a
+                    class="btn"
+                    href="#"
+                    role="button"
+                    onclick="exec_task_proc_modal('history', '{{ task['name'] }}')"
+                >
+                    History
+                </a>
+                <a
+                    class="btn"
+                    href="#"
+                    role="button"
+                    onclick="get_workflow('{{ task['name'] }}')"
+                >
+                    Workflow
+                </a>
+                <a
+                    class="btn"
+                    href="#"
+                    role="button"
+                    onclick="exec_task_proc_modal('log', '{{ task['name'] }}')"
+                >
+                    Log
+                </a>
+                <a
+                    class="btn"
+                    href="#"
+                    role="button"
+                    onclick="exec_task_proc_modal('execute/params', '{{ task['name'] }}')"
+                >
+                    Execute
+                </a>
             </div>
         </div>
     </div>

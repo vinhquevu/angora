@@ -21,4 +21,18 @@
     triggers: shell.print.date.2
     command: "echo $(date '+%Y%m%d')"
     log: "$HOME/workspace/angora/logs/"
-    
+
+-   name: parent_success_test_1
+    triggers:
+        -   test.parent.success.01
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    messages:
+        -   test.parent.success.02
+
+-   name: parent_success_test_2
+    triggers:
+        -   test.parent.success.02
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    parent_success: True

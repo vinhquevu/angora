@@ -21,6 +21,7 @@ from angora.message import Message
 app = FastAPI(version="0.0.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
+TASKS = Tasks()
 
 @app.get("/send")
 async def send(
@@ -42,9 +43,14 @@ async def send(
     return {"status": status, "data": message}
 
 
+@app.get("/tasks/reload")
+async def reload_tasks():
+    TASKS.reload()
+
+
 @app.get("/tasks")
 async def get_tasks(name=None):
-    all_tasks = Tasks().tasks
+    all_tasks = TASKS.tasks
 
     if name:
         all_tasks = [task for task in all_tasks if task["name"] == name]
@@ -56,15 +62,12 @@ async def get_tasks(name=None):
 async def get_tasks_today(status=None):
     tasks = db.get_tasks_today(status=status)
 
-    # if name:
-    #     tasks = [task for task in tasks if task["name"] == name]
-
     return {"data": tasks}
 
 
 @app.get("/tasks/today/notrun")
 async def get_tasks_notrun():
-    all_tasks = Tasks().tasks
+    all_tasks = TASKS.tasks
     tasks_today = {_["name"] for _ in db.get_tasks_today()}
 
     notrun = [task for task in all_tasks if task["name"] not in tasks_today]
@@ -80,7 +83,7 @@ async def get_tasks_last_run_time(name=None):
     into a dictionary (json) and you'll lose any attributes associated with
     the Task object.
     """
-    all_tasks = Tasks().tasks
+    all_tasks = TASKS.tasks
     last_task = db.get_tasks_latest()
 
     if name:
@@ -117,7 +120,7 @@ def _format_category(category):
     """
     For convenience. This does assume a snake case naming convention for task yaml config files.
     """
-    return category.rstrip(".yml").replace("_", " ").upper()
+    return category.rstrip(".yml").rstrip(".yaml").replace("_", " ").upper()
 
 
 @app.get("/tasks/categories")
@@ -126,7 +129,7 @@ async def get_task_categories():
     Return a list of categories, a pretty format of the config source or file
     name that task is saved.
     """
-    categories = [_format_category(task["config_source"]) for task in Tasks().tasks]
+    categories = [_format_category(task["config_source"]) for task in TASKS.tasks]
 
     return {"data": sorted(set(categories))}
 
@@ -178,25 +181,25 @@ async def get_tasks_repeating():
     return {"data": repeating_tasks}
 
 
-@app.get("/tasks/history")
-async def get_task_history(run_date, name=None):
+@app.get("/task/history")
+async def get_task_history(run_date, name):
     tasks = db.get_tasks(run_date, name)
 
     return {"data": tasks}
 
 
-@app.get("/tasks/log")
+@app.get("/task/log")
 async def get_task_log(name):
     """
     This assumes that logs are files that are accessible to the api.
     """
-    for task in Tasks().tasks:
+    for task in TASKS.tasks:
         if task["name"] == name:
-            if task.get("log"):
-                log = os.path.join(task["log"], f"{task['name']}.log")
-                break  # Task names are unique, you can break once you find one.
-            else:
+            if not task.get("log"):
                 return {"ok": True, "data": "TASK NOT LOGGED"}
+            
+            log = task.get("log")
+            break
     else:
         return {"ok": False, "data": "NO MATCHING TASK"}
 
@@ -207,14 +210,14 @@ async def get_task_log(name):
         return {"ok": False, "data": "LOG FILE MISSING"}
 
 
-@app.get("/tasks/children")
+@app.get("/task/children")
 async def get_task_children(name):
-    return {"ok": False, "data": Tasks().get_children(name)}
+    return {"ok": False, "data": TASKS.get_children(name)}
 
 
-@app.get("/tasks/parents")
+@app.get("/task/parents")
 async def get_task_children(name):
-    return {"ok": False, "data": Tasks().get_parents(name)}
+    return {"ok": False, "data": TASKS.get_parents(name)}
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

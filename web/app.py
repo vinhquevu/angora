@@ -1,6 +1,5 @@
 #! /usr/bin/env python3
 
-# import sys
 import uvicorn
 
 from collections import OrderedDict
@@ -8,14 +7,10 @@ from datetime import datetime, date
 
 import asks
 
-# from jinja2 import Environment, PackageLoader
-# from wtforms.form import Form
-# from wtforms.fields.html5 import DateField
 from starlette.responses import PlainTextResponse
 from starlette.templating import Jinja2Templates
 from starlette.applications import Starlette
 
-from angora.db import db
 
 API = "localhost:55550"
 templates = Jinja2Templates(directory="templates")
@@ -114,13 +109,52 @@ async def load_schedule_view(request):
     return templates.TemplateResponse("schedule.html", context)
 
 
-@app.route("/history", methods=["POST"])
-async def history(request):
+@app.route("/task/workflow", methods=["POST"])
+async def load_workflow_view(request):
+    params = await request.form()
+
+    # Children
+    url = f"http://{API}/task/children"
+    response = await asks.get(url, params=params)
+    response.raise_for_status()
+    children = response.json()["data"]
+
+    # Parents
+    url = f"http://{API}/task/parents"
+    response = await asks.get(url, params=params)
+    response.raise_for_status()
+    parents = response.json()["data"]
+
+    # Task Details
+    url = f"http://{API}/tasks/lastruntime"
+
+    tasks = {}
+
+    for task in set(list(children) + list(parents)):
+        params = {"name": task}
+        response = await asks.get(url, params=params)
+        response.raise_for_status()
+
+        tasks[task] = templates.env.get_template("task.html").render(task=response.json()["data"][0])
+
+    context = {"request": request, "children": children, "parents": parents, "task_name": params["name"], "tasks": tasks}
+
+    return templates.TemplateResponse("workflow.html", context)
+
+
+@app.route("/management", methods=["POST"])
+async def load_management_view(request):
+    context = {"request": request}
+    return templates.TemplateResponse("management.html", context)
+
+
+@app.route("/task/history", methods=["POST"])
+async def get_history(request):
     form = await request.form()
     params = dict(form)
     params["run_date"] = date.today().strftime("%Y-%m-%d")
 
-    url = f"http://{API}/tasks/history"
+    url = f"http://{API}/task/history"
     response = await asks.get(url, params=params)
     response.raise_for_status()
     history = response.json()["data"]
@@ -130,10 +164,10 @@ async def history(request):
     return templates.TemplateResponse("history.html", context)
 
 
-@app.route("/log", methods=["POST"])
-async def log(request):
+@app.route("/task/log", methods=["POST"])
+async def get_log(request):
     params = await request.form()
-    url = f"http://{API}/tasks/log"
+    url = f"http://{API}/task/log"
     response = await asks.get(url, params=params)
     response.raise_for_status()
     log = response.json()["data"]
@@ -143,25 +177,7 @@ async def log(request):
     return templates.TemplateResponse("log.html", context)
 
 
-@app.route("/workflow", methods=["POST"])
-async def workflow(request):
-    params = await request.form()
-    url = f"http://{API}/tasks/children"
-    response = await asks.get(url, params=params)
-    response.raise_for_status()
-    children = response.json()["data"]
-
-    url = f"http://{API}/tasks/parents"
-    response = await asks.get(url, params=params)
-    response.raise_for_status()
-    parents = response.json()["data"]
-
-    context = {"request": request, "children": children, "parents": parents, "task_name": params["name"]}
-
-    return templates.TemplateResponse("workflow.html", context)
-
-
-@app.route("/execute/params", methods=["POST"])
+@app.route("/task/execute/params", methods=["POST"])
 async def get_task_params(request):
     params = await request.form()
     url = f"http://{API}/tasks"
@@ -173,7 +189,7 @@ async def get_task_params(request):
     return templates.TemplateResponse("execute.html", context)
 
 
-@app.route("/execute/send", methods=["POST"])
+@app.route("/task/execute/send", methods=["POST"])
 async def send_task_message(request):
     form = await request.form()
     params = {
@@ -195,6 +211,19 @@ async def send_task_message(request):
     response.raise_for_status()
 
     return PlainTextResponse(response.json()["data"])
+
+
+@app.route("/management/reload", methods=["POST"])
+async def reload_tasks(request):
+    url = f"http://{API}/tasks/reload"
+    response = await asks.get(url)
+    response.raise_for_status()
+
+    message = "Configuration files reloaded.  Any updates to tasks have been loaded."
+
+    context = {"request": request, "message": message}
+
+    return templates.TemplateResponse("basic_message_modal.html", context)
 
 
 if __name__ == "__main__":

@@ -29,33 +29,25 @@
 <svg id="svg_parents" class="container-fluid"></svg>
 
 <script type="text/javascript">
-    function draw_graph(nodes, reverse) {
+    function draw_graph(nodes, tasks, reverse) {
         let g = new dagreD3.graphlib.Graph()
             .setGraph({
                 "rankdir": "LR"
             }).setDefaultEdgeLabel(function() { return {}; });
 
         for (var node in nodes) {
-            // The width property doesn't seem to play well with css and html so
-            // all of this is some hackery to get the css/html element to fit into
-            // the node rectangle.
-            var padding_chars = "**";
-            var num_padding_chars = 20 - node.length;
-            if (num_padding_chars > 4) {
-                padding_chars = "*".repeat(num_padding_chars/2);
-            }
-
-            // The &nbsp is more hackery
             g.setNode(node, {
                 "labelType": "html",
-                "label": `<div id="${node}">${padding_chars}${node}${padding_chars}</div>&nbsp;`,
+                "label": tasks[node],
                 "padding": 0,
             });
 
             for (var index in nodes[node]) {
+                // Parents
                 if (reverse == true) {
                     g.setEdge(nodes[node][index], node);
                 }
+                // Children
                 else {
                     g.setEdge(node, nodes[node][index]);
                 }
@@ -67,8 +59,10 @@
 
     var children = JSON.parse('{{ children | tojson | safe }}');
     var parents = JSON.parse('{{ parents | tojson | safe }}');
-    var c = draw_graph(children, false);
-    var p = draw_graph(parents, true);
+    var tasks = {{tasks | safe }};
+
+    var c = draw_graph(children, tasks, false);
+    var p = draw_graph(parents, tasks, true);
 
     var render = new dagreD3.render();
 
@@ -85,36 +79,8 @@
     svg_p.attr("viewBox", `0 0 ${p.graph().width} ${p.graph().height}`);
 
 
-    function load_task(parent_id, task_name) {
-        selector = `#${parent_id} #${task_name}`;
-        $.ajax({
-            url: "/task",
-            type: "POST",
-            data: {
-                "name": task_name
-            },
-            async: false,  // Necessary for this to work
-            success: function(result) {
-                $(selector).html(result);
-            },
-            error: function(result) {
-                $(selector).html("ERROR");
-            },
-        });
-    }
-
-    // So here's some fun, now the the graph is drawn, overlay each node with
-    // the same task html object we use everywhere else
     $(document).ready(function () {
-        for (var node in children) {
-            load_task("svg_children", node);
-        }
-
-        for (var node in parents) {
-            load_task("svg_parents", node);
-        }
-
-        // Set properties of all the popovers at once
+        // Some setup work for all the popovers
         $(function () {
             $('[data-toggle="popover"]').popover({
                 html: true,

@@ -176,13 +176,9 @@ COMING SOON
 
 
 ## TODO
-1. don't initialize Tasks every time, it's costly
+1. Distributed operation
 2. index tasks by name for faster lookup
 3. index tasks by trigger for faster lookup
-4. Optimize graph drawing
-5. Change app.route to post?
-6. Convert to Quart
-7. Distributed operation
-8. Replace spaces with underscores, lowercase only, for log file
-9. Add parent success check
-10. Allow .yaml and .yml
+4. Convert to Quart?
+5. Create the concept of a unique run id
+6. Control EVERYTHING from the API

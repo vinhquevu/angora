@@ -6,7 +6,7 @@ from celery import Celery
 
 from angora import EXCHANGE, USER, PASSWORD, HOST, PORT
 from angora.task import Task
-from angora.db.db import insert_task, insert_message
+from angora.db.db import insert_task, insert_message, get_tasks_latest
 from angora.message import Message
 from angora.listener import Queue
 
@@ -36,6 +36,29 @@ def run(payload):
         task["log"],
         status=status,
     )
+
+    # Parent Success
+    if task["parent_success"]:
+        for parent in task["parents"]:
+            try:
+                status = get_tasks_latest(parent)[0].get("status")
+            except IndexError:
+                status = "fail"
+            finally:
+                if status != "success":
+                    # Insert fail message, no replay regardless of setting
+                    insert_task(
+                        task["name"],
+                        trigger,
+                        task["command"],
+                        str(task["parameters"]),
+                        task["log"],
+                        status="fail",
+                    )
+
+                    task.log("PARENT SUCCESS CHECK FAILED")
+                    
+                    return 1
 
     retval = task.run()
 
@@ -81,7 +104,6 @@ def run(payload):
                 USER, PASSWORD, HOST, PORT, "replay"
             )
             task["replay"] -= 1
-        print("DONE")
 
     return retval
 

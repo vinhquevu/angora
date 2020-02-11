@@ -9,3 +9,9 @@
         -   python.script.argtest
     command: "$HOME/workspace/angora/test/arg_test.py"
     log: "$HOME/workspace/angora/logs/"
+
+-   name: test_reload
+    triggers:
+        -   python.reload.test
+    command: "env"
+    log: "$HOME/workspace/angora/logs/"

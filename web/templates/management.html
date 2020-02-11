@@ -1,0 +1,43 @@
+<div class="container">
+    <div class="row">
+        <div class="card" style="width: 18rem;" id="reload_tasks_card">
+            <div class="card-body">
+                <h5 class="card-title">Reload Tasks</h5>
+                <p class="card-text">Rescan all configuration files and load any changes to tasks.</p>
+                <button
+                    type="button"
+                    class="btn btn-primary"
+                    onclick="reload_tasks()"
+                >
+                    Execute
+                </button>
+            </div>
+        </div>
+
+        <div class="card" style="width: 18rem;" id="clear_replay_card">
+            <div class="card-body">
+                <h5 class="card-title">Clear Replay Queue</h5>
+                <p class="card-text">Clear all tasks from the replay queue.</p>
+                <button type="button" class="btn btn-primary">Coming soon</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    function reload_tasks() {
+        $.ajax({
+            url: "/management/reload",
+            type: "POST",
+            success: function(result) {
+                $("#dialog_box").html(result);
+            },
+            error: function() {
+                $("#dialog_box").html("ERROR");
+            },
+            complete: function() {
+                $("#dialog_box").modal('show');
+            }
+        });
+    }
+</script>

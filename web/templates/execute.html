@@ -44,7 +44,7 @@ Execute Task
 <script type="text/javascript">
     function execute_task() {
         $.ajax({
-            url: "/execute/send",
+            url: "task/execute/send",
             type: "POST",
             data: {
                 "trigger": $("#trigger").val(),

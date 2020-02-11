@@ -1,0 +1,8 @@
+-   name: another_workflow_test
+    triggers:
+        -   test.workflow.01.extra
+    command: "env"
+    log: $HOME/workspace/angora/logs/
+    messages:
+        -   test.workflow.02
+        -   test.workflow.03
