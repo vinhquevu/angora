@@ -4,11 +4,20 @@
 (-.-)
 o_(")(")
 ```
-Angora is a job execution system based on message queues.  There is no coding required to use Angora, although everyone is encouraged to make it their own.  The jobs, a.k.a. tasks, are Linux system commands executed via Python's subprocess module, i.e. `echo 'Hello World'`.  Jobs are configured in YAML files.  Jobs are assigned to messages and when one of those matching messages is read from a job queue, the job will execute.  Each job has the option to send additional messages on success.  Those messages and their corresponding jobs are how workflows are built.  You can interact with the Angora system via a web API and the user interface is a web application.
+Angora is a job execution system based on message queues.  There is no Python
+coding required to use Angora, or at least very little, although everyone is
+encouraged to make it their own. The jobs, a.k.a. tasks, are Linux system
+commands executed via Python's subprocess module, i.e. `echo 'Hello World'`.
+Jobs are configured in YAML files.  Jobs are assigned to messages and when one
+of those matching messages is read from a job queue, the job will execute.  Each
+job has the option to send additional messages on success.  Those messages and
+their corresponding jobs are how workflows are built.  You can interact with the
+Angora system via a web API and the user interface is a web application.
 
 ## Installation
 ### Erlang
-You'll need to install [Erlang](https://www.erlang.org/).  Follow the instructions for your system or visit the Erlang site for more details.  
+You'll need to install [Erlang](https://www.erlang.org/).  Follow the
+instructions for your system or visit the Erlang site for more details.
 
 For Homebrew on OS X: `brew install erlang`  
 For MacPorts on OS X: `port install erlang`  
@@ -17,54 +26,92 @@ For Fedora: `yum install erlang`
 For FreeBSD: `pkg install erlang`  
 
 ### RabbitMQ
-[RabbitMQ](https://www.rabbitmq.com/) is a message broker.  Angora will work with any AMPQ message broker but it's only been tested with RabbitMQ.  Checkout the RabbitMQ download and installation [instructions](https://www.rabbitmq.com/download.html) for details about your specfic environment.
+[RabbitMQ](https://www.rabbitmq.com/) is a message broker.  Angora will work
+with any AMPQ message broker but it's only been tested with RabbitMQ.  Checkout
+the RabbitMQ download and installation
+[instructions](https://www.rabbitmq.com/download.html) for details about your
+specfic environment.
 
 ### Python Libraries
 The following libraries are required.
 - Celery, `pip install celery`
 - PyYaml, `pip install pyyaml`
+- SQLAlchemy, `pip install sqlalchemy`
+- FastAPI, `pip install fastapi`
+- Uvicorn, `pip install uvicorn`
+- HTTPX, `pip install httpx`
 
 ## Starting Angora
+
+Make sure the angora folder is on the PYTHONPATH.
+```
+    export PYTHONPATH=/path/to/angora:$PYTHTONPATH
+```
+
 ### RabbitMQ
 Depending on your local installation, your steps may differ but here are the basics:
+```
     cd /usr/local/opt/rabbitmq/sbin
     ./rabbitmq-server -detached
-
+```
 You can stop RabbitMQ anytime with the command: `sudo ./rabbitmqctl stop`
 
 ### Celery
-You need to start the Celery worker from the directory containing the celery jobs to run.  In the case of Angora there is only one and it is in `start.py`.  You need to start a Celery worker on each client.
+You need to start the Celery worker from the directory containing the celery
+jobs to run.  In the case of Angora there is only one and it is in `client.py`.
+You need to start a Celery worker on each client.
 
     cd listeners/
-    celery -A start worker --concurrency=8 --loglevel=debug -Ofair 2>&1
+    celery -A client worker --concurrency=8 --loglevel=debug -Ofair 2>&1
 
 #### --concurrency
-You'll want to set this number at something greater than one in order to facilite running jobs in parallel.  This number does not need to match the number of cores or threads you intend to use.  The default is the number of CPUs detected.  Checkout the [Celery documentation](https://docs.celeryproject.org/en/latest/userguide/workers.html) for more on concurrency vs workers and other Celery details.
+You'll want to set this number at something greater than one in order to
+facilite running jobs in parallel.  This number does not need to match the
+number of cores or threads you intend to use.  The default is the number of CPUs
+detected.  Checkout the [Celery
+documentation](https://docs.celeryproject.org/en/latest/userguide/workers.html)
+for more on concurrency vs workers and other Celery details.
 
 #### -Ofair
-This sets the scheduling strategy to fair which in most cases is required for Angora to work properly.  As of Celery 4.x this should be the default behavior.
+This sets the scheduling strategy to fair which in most cases is required for
+Angora to work properly.  As of Celery 4.x this should be the default behavior.
 
 ### Server
-`./listeners/initialize.py`
+`./listeners/server.py`
 
-This will start up a listener for a queue named `initialize`.  If the queue does not exist it will be created by simply starting up a listener.  There are two callbacks, one logs all messages, the other searches for any job with a matching trigger.  If any are found, those jobs are sent to the client queue.  You should only have one instance of the server running, even in a distributed setup.
+This will start up a listener for a queue named `initialize`.  If the queue does
+not exist it will be created by simply starting up a listener.  There are two
+callbacks, one logs all messages, the other searches for any job with a matching
+trigger.  If any are found, those jobs are sent to the client queue.  You should
+only have one instance of the server running, even in a distributed setup.
 
 ### Client
 `./listeners/start.py`
 
-This will start up a listener for a queue named `start`.  If the queue does not exist it will be created by simply starting up a listener.  There is one callback which executes the given job.
+This will start up a listener for a queue named `start`.  If the queue does not
+exist it will be created by simply starting up a listener.  There is one
+callback which executes the given job.
 
 ### Replay
 `./listeners/replay.py`
 
-This will create a queue named `replay` if it does not exist.  If the queue does exist it will clear that queue.  You must run this at least once when starting up an instance of Angora for the replay feature to work.
+This will create a queue named `replay` if it does not exist.  If the queue does
+exist it will clear that queue.  You must run this at least once when starting
+up an instance of Angora for the replay feature to work.
 
 ### Web API
-A web API written using FastAPI.  Interfacing with Angora is meant to occur through the API, although it is not a requirement.
+A web API written with FastAPI.  Interfacing with Angora is meant to occur
+through the API, although it is not a requirement.
 ### Web App
-The default user interface to Angora.  The user is welcome to customize this in any way they see fit.
+The default user interface to Angora.  The user is welcome to customize this in
+any way they see fit.
 ## Jobs
-A job is just any command you can run on the command line.  It can be as simple as `echo "hello world"` or something more complicated.  Most likely you'll be running some script, `job.sh` or `job.py`.  Angora does not interact with the job at all, it just executes it and reads the return code or exit status.  A return code of zero will be interpreted as success and anything will be interpreted as failure.  The return code being read is equivalent to `echo $?`.
+A job is just any command you can run on the command line.  It can be as simple
+as `echo "hello world"` or something more complicated.  Most likely you'll be
+running some script, `job.sh` or `job.py`.  Angora does not interact with the
+job at all, it just executes it and reads the return code or exit status.  A
+return code of zero will be interpreted as success and anything will be
+interpreted as failure.  The return code being read is equivalent to `echo $?`.
 
 ### Configuration File
 Configuration files should be where you're spending most of your time.  All configuration files must be saved in the `tasks/` directory and end with a `.yml` extension.  Angora will parse any file meeting that criteria on startup.
@@ -182,3 +229,22 @@ COMING SOON
 4. Convert to Quart?
 5. Create the concept of a unique run id
 6. Control EVERYTHING from the API
+
+
+Notes
+from celery import current_app
+from celery.bin import worker
+
+
+if __name__ == '__main__':
+    app = current_app._get_current_object()
+
+    worker = worker.worker(app=app)
+
+    options = {
+        'broker': 'amqp://guest:guest@localhost:5672//',
+        'loglevel': 'INFO',
+        'traceback': True,
+    }
+
+    worker.run(**options)

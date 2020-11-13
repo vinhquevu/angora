@@ -14,10 +14,10 @@ from angora.listener import Queue
 # Celery name has to be the same as the module that contains the task.  In
 # this case it's "start"
 app = Celery(
-    "start", broker="amqp://", backend="amqp://", include="angora.listeners.start"
+    "client", include="angora.listeners.client"
 )
 app.conf.update(
-    CELERY_ACCEPT_CONTENT=["application/json"], CELERY_TASK_SERIALIZER="json"
+    accept_content=["application/json"], task_serializer="json"
 )
 
 

@@ -224,7 +224,7 @@ if __name__ == "__main__":
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--port", default=55550, type=int)
-    parser.add_argument("--debug", action="store_true")
-    pargs = parser.parse_args()
+    parser.add_argument("--reload", action="store_true")
+    args = parser.parse_args()
 
-    uvicorn.run(app, host="0.0.0.0", port=pargs.port, debug=pargs.debug)
+    uvicorn.run("api:app", host="0.0.0.0", port=args.port, reload=args.reload)

@@ -1,11 +1,11 @@
 #! /usr/bin/env python3
 
-import uvicorn
-
+import argparse
 from collections import OrderedDict
 from datetime import datetime, date
 
-import asks
+import uvicorn
+import httpx
 
 from starlette.responses import PlainTextResponse
 from starlette.templating import Jinja2Templates
@@ -29,27 +29,27 @@ async def load_dashboard_view(request):
     url = f"http://{API}/tasks/today"
 
     params = {"status": "start"}
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     executed = response.json()["data"]
 
     params = {"status": "success"}
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     successful = response.json()["data"]
 
     params = {"status": "fail"}
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     failed = response.json()["data"]
 
     params = {"status": "replay"}
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     replayed = response.json()["data"]
 
     url = f"http://{API}/tasks/today/notrun"
-    response = await asks.get(url)
+    response = await httpx.get(url)
     response.raise_for_status()
     notrun = response.json()["data"]
 
@@ -68,7 +68,7 @@ async def load_dashboard_view(request):
 @app.route("/tasks", methods=["POST"])
 async def load_tasks_view(request):
     url = f"http://{API}/tasks/lastruntime/sorted/category"
-    response = await asks.get(url)
+    response = await httpx.get(url)
     response.raise_for_status()
 
     context = {"request": request, "data": response.json()["data"]}
@@ -80,7 +80,7 @@ async def load_tasks_view(request):
 async def load_task_detail(request):
     params = await request.form()
     url = f"http://{API}/tasks/lastruntime"
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
 
     context = {"request": request, "task": response.json()["data"][0]}
@@ -91,12 +91,12 @@ async def load_task_detail(request):
 @app.route("/schedule", methods=["POST"])
 async def load_schedule_view(request):
     url = f"http://{API}/tasks/scheduled"
-    response = await asks.get(url)
+    response = await httpx.get(url)
     response.raise_for_status()
     scheduled_tasks = response.json()["data"]
 
     url = f"http://{API}/tasks/repeating"
-    response = await asks.get(url)
+    response = await httpx.get(url)
     response.raise_for_status()
     repeating_tasks = response.json()["data"]
 
@@ -115,13 +115,13 @@ async def load_workflow_view(request):
 
     # Children
     url = f"http://{API}/task/children"
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     children = response.json()["data"]
 
     # Parents
     url = f"http://{API}/task/parents"
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     parents = response.json()["data"]
 
@@ -132,7 +132,7 @@ async def load_workflow_view(request):
 
     for task in set(list(children) + list(parents)):
         params = {"name": task}
-        response = await asks.get(url, params=params)
+        response = await httpx.get(url, params=params)
         response.raise_for_status()
 
         tasks[task] = templates.env.get_template("task.html").render(task=response.json()["data"][0])
@@ -155,7 +155,7 @@ async def get_history(request):
     params["run_date"] = date.today().strftime("%Y-%m-%d")
 
     url = f"http://{API}/task/history"
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     history = response.json()["data"]
 
@@ -168,7 +168,7 @@ async def get_history(request):
 async def get_log(request):
     params = await request.form()
     url = f"http://{API}/task/log"
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
     log = response.json()["data"]
 
@@ -181,7 +181,7 @@ async def get_log(request):
 async def get_task_params(request):
     params = await request.form()
     url = f"http://{API}/tasks"
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
 
     context = {"request": request, "task": response.json()["data"][0]}
@@ -207,7 +207,7 @@ async def send_task_message(request):
         params["params"] = temp_str.split(" ")
 
     url = f"http://{API}/send"
-    response = await asks.get(url, params=params)
+    response = await httpx.get(url, params=params)
     response.raise_for_status()
 
     return PlainTextResponse(response.json()["data"])
@@ -216,7 +216,7 @@ async def send_task_message(request):
 @app.route("/management/reload", methods=["POST"])
 async def reload_tasks(request):
     url = f"http://{API}/tasks/reload"
-    response = await asks.get(url)
+    response = await httpx.get(url)
     response.raise_for_status()
 
     message = "Configuration files reloaded.  Any updates to tasks have been loaded."
@@ -227,12 +227,11 @@ async def reload_tasks(request):
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
     parser.add_argument("--port", dest="port", default=55551, type=int)
-    pargs = parser.parse_args()
+    parser.add_argument("--reload", action="store_true")
+    args = parser.parse_args()
 
-    uvicorn.run(app, host="0.0.0.0", port=pargs.port, debug=True)
+    uvicorn.run("app:app", host="0.0.0.0", port=args.port, reload=args.reload)

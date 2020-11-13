@@ -52,7 +52,7 @@ class Queue:
         with kombu.Connection(self.__connection_str) as conn:
             with kombu.Consumer(conn, [self.__queue], callbacks=callbacks, no_ack=True):
                 try:
-                    print("STARING LISTENER")
+                    print("STARTING LISTENER")
                     for _ in kombu.eventloop(conn):
                         pass
                 except KeyboardInterrupt:

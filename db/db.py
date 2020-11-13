@@ -31,6 +31,7 @@ def _session():
     yield session
     session.close()
 
+
 class Messages(_base):
     __tablename__ = "messages"
     message_id = Column("id", Integer, primary_key=True)
@@ -72,9 +73,6 @@ def initDB():
 
     if not engine.dialect.has_table(engine, "tasks"):
         _base.metadata.tables["tasks"].create(engine)
-
-
-initDB()
 
 
 def insert_message(
