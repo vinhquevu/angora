@@ -10,10 +10,16 @@ from dateutil.relativedelta import relativedelta
 import uvicorn
 
 from fastapi import FastAPI, Query
-
 from starlette.middleware.cors import CORSMiddleware
 
-from angora import EXCHANGE, USER, PASSWORD, HOST, PORT
+from angora import (
+    EXCHANGE,
+    USER,
+    PASSWORD,
+    HOST,
+    PORT,
+    CONFIGS,
+)
 from angora.db import db
 from angora.task import Tasks
 from angora.message import Message
@@ -21,7 +27,8 @@ from angora.message import Message
 app = FastAPI(version="0.0.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
-TASKS = Tasks()
+TASKS = Tasks(CONFIGS)
+
 
 @app.get("/send")
 async def send(
@@ -197,7 +204,7 @@ async def get_task_log(name):
         if task["name"] == name:
             if not task.get("log"):
                 return {"ok": True, "data": "TASK NOT LOGGED"}
-            
+
             log = task.get("log")
             break
     else:
@@ -216,8 +223,9 @@ async def get_task_children(name):
 
 
 @app.get("/task/parents")
-async def get_task_children(name):
+async def get_task_parents(name):
     return {"ok": False, "data": TASKS.get_parents(name)}
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

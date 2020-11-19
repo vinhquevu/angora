@@ -1,3 +1,6 @@
+"""
+Angora Message
+"""
 from kombu import Connection, Producer
 
 

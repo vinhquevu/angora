@@ -1,3 +1,7 @@
+"""
+Constants
+"""
+
 import os
 
 EXCHANGE = "angora"

@@ -1,5 +1,5 @@
 """
-Task objects
+Angora Task
 """
 import os
 import re
@@ -9,7 +9,7 @@ import functools
 import subprocess
 from glob import glob
 
-from angora import CONFIGS
+# from angora import CONFIGS
 
 
 class Task(dict):
@@ -138,7 +138,8 @@ class Tasks:
     List of tasks from parsing a config file.
     """
 
-    def __init__(self):
+    def __init__(self, configs):
+        self.configs = configs
         self.tasks = []
         self.__tree = Graph()
 
@@ -162,7 +163,7 @@ class Tasks:
         self.get_child_tree.cache_clear()
         self.get_parent_tree.cache_clear()
         
-        for config in glob(CONFIGS):
+        for config in glob(self.configs):
             with open(config, "r") as cfg:
                 tmp = yaml.full_load(cfg)
 

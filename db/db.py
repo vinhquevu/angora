@@ -1,3 +1,6 @@
+"""
+Angora Database
+"""
 import os
 import sqlite3
 from datetime import datetime, date
@@ -25,9 +28,7 @@ _base = declarative_base()
 @contextmanager
 def _session():
     engine = create_engine("sqlite:///{}".format(_database))
-    session = scoped_session(
-        sessionmaker(autocommit=True, autoflush=True, bind=engine)
-    )
+    session = scoped_session(sessionmaker(autocommit=True, autoflush=True, bind=engine))
     yield session
     session.close()
 
@@ -57,15 +58,10 @@ class Tasks(_base):
     parameters = Column("parameters", Text)
     log = Column("log", Text)
     status = Column("status", Text)
-    time_stamp = Column(
-        "time_stamp",
-        DateTime(),
-        default=datetime.now,
-        index=True
-    )
+    time_stamp = Column("time_stamp", DateTime(), default=datetime.now, index=True)
 
 
-def initDB():
+def init_db():
     engine = create_engine("sqlite:///{}".format(_database))
 
     if not engine.dialect.has_table(engine, "messages"):
@@ -108,15 +104,7 @@ def get_messages_today():
     return [dict(zip(row.keys(), row)) for row in result]
 
 
-def insert_task(
-    name,
-    trigger,
-    command,
-    parameters,
-    log,
-    status,
-    time_stamp=None
-):
+def insert_task(name, trigger, command, parameters, log, status, time_stamp=None):
     values = {
         "name": name,
         "trigger": trigger,
@@ -145,20 +133,23 @@ def get_tasks_latest(name: str = None):
         filters.append(Tasks.name == name)
 
     with _session() as session:
-        max_time = session.query(
-            Tasks.name, func.max(Tasks.time_stamp).label("time_stamp")
-        ).filter(*filters).group_by(Tasks.name).cte()
+        max_time = (
+            session.query(Tasks.name, func.max(Tasks.time_stamp).label("time_stamp"))
+            .filter(*filters)
+            .group_by(Tasks.name)
+            .cte()
+        )
 
-        query = session.query(
-            Tasks.__table__
-        ).join(
-            max_time,
-            and_(
-                Tasks.name == max_time.c.name,
-                Tasks.time_stamp == max_time.c.time_stamp
-            ),
-        ).filter(
-            Tasks.time_stamp >= date.today()
+        query = (
+            session.query(Tasks.__table__)
+            .join(
+                max_time,
+                and_(
+                    Tasks.name == max_time.c.name,
+                    Tasks.time_stamp == max_time.c.time_stamp,
+                ),
+            )
+            .filter(Tasks.time_stamp >= date.today())
         )
 
     return [dict(zip(row.keys(), row)) for row in query]
@@ -196,9 +187,12 @@ def get_tasks(
         filters.append(Tasks.time_stamp <= end_datetime)
 
     with _session() as session:
-        query = session.query(Tasks.__table__).filter(*filters).order_by(Tasks.time_stamp)
+        query = (
+            session.query(Tasks.__table__).filter(*filters).order_by(Tasks.time_stamp)
+        )
 
     return [dict(zip(row.keys(), row)) for row in query]
+
 
 # def clearDB():
 #     with sqlite3.connect(_database) as conn:
@@ -226,4 +220,3 @@ def get_tasks(
 #     time_stamp
 # ):
 #     return
-
