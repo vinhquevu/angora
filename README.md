@@ -58,13 +58,13 @@ You can stop RabbitMQ anytime with the command: `sudo ./rabbitmqctl stop`
 
 ### Main
 The CLI for Angora is main.py.  You'll need to start:
-Initialize the database
-Start the main server
-Start a client
-Start a celery worker (See Celery section)
-Start the replay queue
-Start the web API
-Start the web app (optional)
+1. Initialize the database
+2. Start the main server
+3. Start a client
+4. Start a celery worker (See Celery section)
+5. Start the replay queue
+6. Start the web API
+7. Start the web app (optional)
 
 #### Database
 `./main.py initdb`
@@ -97,9 +97,7 @@ up an instance of Angora for the replay feature to work.  Unlike server and
 client, this command will not start a service and will exit on completion.
 
 #### Web API
-`./main.py web api`
-Or
-`./web/api.py`
+`./main.py web api` or `./web/api.py`
 
 A web API written with FastAPI.  Interfacing with Angora (outside of startup) is
 meant to occur through the API, although it is not a requirement.  The api is
@@ -107,9 +105,7 @@ run by Uvicorn.  Feel free to run this behind Gunicorn and/or Nginx in
 production.
 
 #### Web App
-`./main.py web app`
-Or
-`./web/app.py`
+`./main.py web app` or `./web/app.py`
 
 The default user interface to Angora.  The user is welcome to customize this in
 any way they see fit or write their own entirely.  Like the API, the app is also
@@ -120,9 +116,7 @@ You need to start the Celery worker from the directory containing the celery
 jobs to run.  In the case of Angora there is only one and it is in `main.py`.
 You need to start a Celery worker on each client.  You can do so using the standard command line or from an option in `main.py`.  The former may provide more options not available under `main.py`.
 
-`celery -A angora.main worker --concurrency=8 --loglevel=debug -Ofair 2>&1`
-Or
-`./main.py celery`
+`celery -A angora.main worker --concurrency=8 --loglevel=debug -Ofair 2>&1` or `./main.py celery`
 
 #### --concurrency
 You'll want to set this number at something greater than one in order to
