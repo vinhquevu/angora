@@ -3,6 +3,7 @@ Angora Database
 """
 import os
 import sqlite3
+from typing import Optional, Union, Generator, Dict, List
 from datetime import datetime, date
 from sqlalchemy import (
     Column,
@@ -26,7 +27,7 @@ _base = declarative_base()
 
 
 @contextmanager
-def _session():
+def _session() -> Generator:
     engine = create_engine("sqlite:///{}".format(_database))
     session = scoped_session(sessionmaker(autocommit=True, autoflush=True, bind=engine))
     yield session
@@ -61,7 +62,7 @@ class Tasks(_base):
     time_stamp = Column("time_stamp", DateTime(), default=datetime.now, index=True)
 
 
-def init_db():
+def init_db() -> None:
     engine = create_engine("sqlite:///{}".format(_database))
 
     if not engine.dialect.has_table(engine, "messages"):
@@ -72,12 +73,12 @@ def init_db():
 
 
 def insert_message(
-    exchange,
-    queue,
-    message,
-    data=None,
-    time_stamp=None,
-):
+    exchange: str,
+    queue: str,
+    message: str,
+    data: Optional[Dict] = None,
+    time_stamp: Optional[str] = None,
+) -> None:
     values = {
         "exchange": exchange,
         "queue": queue,
@@ -95,7 +96,7 @@ def insert_message(
         session.execute(Messages.__table__.insert(), values)
 
 
-def get_messages_today():
+def get_messages_today() -> List:
     with _session() as session:
         result = session.query(Messages.__table__).filter(
             Messages.time_stamp >= date.today()
@@ -104,7 +105,15 @@ def get_messages_today():
     return [dict(zip(row.keys(), row)) for row in result]
 
 
-def insert_task(name, trigger, command, parameters, log, status, time_stamp=None):
+def insert_task(
+    name: str,
+    trigger: str,
+    command: str,
+    parameters: str,
+    log: str,
+    status: str,
+    time_stamp: Optional[str] = None,
+) -> None:
     values = {
         "name": name,
         "trigger": trigger,
@@ -122,11 +131,11 @@ def insert_task(name, trigger, command, parameters, log, status, time_stamp=None
         session.execute(Tasks.__table__.insert(), values)
 
 
-def get_tasks_today(status: str = None):
+def get_tasks_today(status: Optional[str] = None) -> List:
     return get_tasks(status=status, start_datetime=date.today())
 
 
-def get_tasks_latest(name: str = None):
+def get_tasks_latest(name: Optional[str] = None) -> List:
     filters = [Tasks.time_stamp >= date.today()]
 
     if name:
@@ -156,16 +165,16 @@ def get_tasks_latest(name: str = None):
 
 
 def get_tasks(
-    run_date: str = None,
-    name: str = None,
-    trigger: str = None,
-    command: str = None,
-    parameters: str = None,
-    log: str = None,
-    status: str = None,
-    start_datetime: datetime = None,
-    end_datetime: datetime = None,
-):
+    run_date: Optional[str] = None,
+    name: Optional[str] = None,
+    trigger: Optional[str] = None,
+    command: Optional[str] = None,
+    parameters: Optional[str] = None,
+    log: Optional[str] = None,
+    status: Optional[str] = None,
+    start_datetime: Union[datetime, date, None] = None,
+    end_datetime: Union[datetime, date, None] = None,
+) -> List:
 
     filters = []
 

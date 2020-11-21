@@ -1,9 +1,15 @@
 #! /usr/bin/env python3
+"""
+Main Angora entry point.  Start each component of Angora from here.
+"""
 import os
 import argparse
 import subprocess
 
+from typing import Dict
 from functools import partial
+
+import kombu
 
 from celery import Celery
 
@@ -21,7 +27,7 @@ from angora import (
     CONFIGS,
 )
 
-_tasks = Tasks(CONFIGS)
+TASKS = Tasks(CONFIGS)
 
 ##########
 # Celery #
@@ -33,7 +39,7 @@ app.conf.update(accept_content=["application/json"], task_serializer="json")
 
 
 @app.task()
-def run(payload):
+def run(payload: Dict) -> int:
     """
     The lone Celery task.
     """
@@ -105,21 +111,22 @@ def run(payload):
     return retval
 
 
-def archive(payload, _):
+def archive(payload: Dict, _: kombu.Message) -> None:
     db.insert_message(**payload)
 
 
-def parse_task(payload, _):
+def parse_task(payload: Dict, _: kombu.Message) -> None:
     task_queue_name = os.uname()[1]
-    tasks = _tasks.get_tasks_by_trigger(payload["message"])
+    tasks = TASKS.get_tasks_by_trigger(payload["message"])
 
     for task in tasks:
         task["parameters"] = payload["data"]
-        msg = Message(EXCHANGE, task_queue_name, payload["message"], data=task)
-        msg.send(USER, PASSWORD, HOST, PORT, task_queue_name)
+        Message(EXCHANGE, task_queue_name, payload["message"], data=task).send(
+            USER, PASSWORD, HOST, PORT, task_queue_name
+        )
 
 
-def maintain_db(args: argparse.Namespace):
+def maintain_db(args: argparse.Namespace) -> None:
     """
     Initialize the database with Messages and Tasks tables.  Just calles
     init_db() from the db module.
@@ -127,7 +134,7 @@ def maintain_db(args: argparse.Namespace):
     db.init_db()
 
 
-def start_server(args: argparse.Namespace):
+def start_server(args: argparse.Namespace) -> None:
     """
     Start the Angora server.  It's a RabbitMQ queue named "angora".  There are
     two callbacks, archive(), and parse_task().
@@ -136,7 +143,7 @@ def start_server(args: argparse.Namespace):
     Queue("angora", "angora").listen(callbacks)
 
 
-def start_client(args: argparse.Namespace):
+def start_client(args: argparse.Namespace) -> None:
     """
     Start an Angora task client.  It's a RabbitMQ queue.  The default name is
     the name of the local host.  There are two callbacks, archive() and a lambda
@@ -147,7 +154,7 @@ def start_client(args: argparse.Namespace):
     Queue(args.queue_name, args.queue_name).listen(callbacks)
 
 
-def clear_replay(args: argparse.Namespace):
+def clear_replay(args: argparse.Namespace) -> None:
     """
     Start the Replay queue.  The Replay queue is a RabbitMQ dead letter queue.
     After a set amount of time, messages in the Replay queue are released to a
@@ -163,7 +170,7 @@ def clear_replay(args: argparse.Namespace):
     Queue("replay", "replay", queue_args=queue_args).clear()
 
 
-def start_celery(args: argparse.Namespace):
+def start_celery(args: argparse.Namespace) -> None:
     import logging
 
     _worker = app.Worker()
@@ -176,7 +183,7 @@ def start_celery(args: argparse.Namespace):
     _worker.start()
 
 
-def start_web(args: argparse.Namespace):
+def start_web(args: argparse.Namespace) -> None:
     import uvicorn
 
     print(f"Starting web {args.module}")

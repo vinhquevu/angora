@@ -1,17 +1,25 @@
 """
 Angora Message
 """
+from typing import Dict, Optional, Union
 from kombu import Connection, Producer
 
 
 class Message(dict):
     """
-    Message protocol, basically a modified python dictionary.
+    Message protocol, basically a modified python dictionary.  Inherit dict to make it JSON serializable.
     """
 
     __keys = ("exchange", "queue", "message", "time_stamp", "data")
 
-    def __init__(self, exchange, queue, message, time_stamp=None, data=None):
+    def __init__(
+        self,
+        exchange: str,
+        queue: str,
+        message: str,
+        time_stamp: Optional[str] = None,
+        data: Optional[Dict] = None,
+    ) -> None:
         """
         :param exchange: The RabbitMQ exchange
         :type msg: str
@@ -31,25 +39,15 @@ class Message(dict):
         self["time_stamp"] = time_stamp
         self["data"] = data
 
-        # for key, value in self.items():
-        #     setattr(self, key, value)
-
         super().__init__()
 
-    # def __setattr__(self, key, value):
-    #     if key in self.__keys:
-    #         super(Message, self).__setattr__(key, value)
-    #         super(Message, self).__setitem__(key, value)
-    #     else:
-    #         raise KeyError("{} is not a valid key".format(key))
-
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Union[str, Dict]) -> None:
         if key in self.__keys:
             super().__setitem__(key, value)
         else:
             raise KeyError("{} is not a valid key".format(key))
 
-    def send(self, user, password, host, port, routing_key):
+    def send(self, user, password, host, port, routing_key) -> None:
         connection_str = "amqp://{}:{}@{}:{}//".format(user, password, host, port)
 
         with Connection(connection_str) as conn:

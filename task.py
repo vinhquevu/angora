@@ -8,59 +8,46 @@ import shlex
 import functools
 import subprocess
 from glob import glob
-
-# from angora import CONFIGS
+from typing import List, Dict, Optional, Union, TextIO
 
 
 class Task(dict):
     """
-    The Task object.  Stores all the task attributes and the run command to execute the task.
+    The Task object.  Stores all the task attributes and the run command to
+    execute the task.  Inherits dict to make it JSON serializable.
     """
 
     def __init__(
         self,
-        name,
-        command,
-        triggers=None,
-        # type=None,
-        log=None,
-        messages=None,
-        parameters=None,
-        # queue=None,
-        parent_success=False,
-        replay=None,
-        config_source=None,
-        # children=None,
-        parents=None,
-    ):
+        name: str,
+        command: str,
+        triggers: Optional[List] = None,
+        log: Optional[str] = None,
+        messages: List = [],
+        parameters: List = [],
+        parent_success: bool = False,
+        replay: Optional[int] = None,
+        config_source: Optional[str] = None,
+        parents: Optional[List] = None,
+    ) -> None:
         self["name"] = name
         self["command"] = command
         self["triggers"] = triggers
-        # self["type"] = type
         self["log"] = log
-        # self["queue"] = queue
         self["parent_success"] = parent_success
         self["replay"] = replay
         self["config_source"] = config_source
         self["parents"] = parents
-
-        if messages:
-            self["messages"] = messages
-        else:
-            self["messages"] = []
-
-        if parameters:
-            self["parameters"] = parameters
-        else:
-            self["parameters"] = []
+        self["messages"] = messages
+        self["parameters"] = parameters
 
         super().__init__()
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Union[str, int, bool, List]) -> None:
         if value and key == "command":
-            super().__setitem__(key, self._expandvars(value))
+            super().__setitem__(key, self._expandvars(str(value)))
         elif value and key == "log":
-            filename = self._expandvars(value)
+            filename = self._expandvars(str(value))
 
             if os.path.isdir(filename):
                 name = self["name"].lower().replace(" ", "_")
@@ -72,17 +59,10 @@ class Task(dict):
         else:
             super().__setitem__(key, value)
 
-    # @property
-    # def category(self):
-    #     """
-    #     Format the category name. It's the file name in upper case and
-    #     spaces instead of underscores
-    #     """
-    #     return self["config_source"].rstrip('.yml').replace('_', ' ').upper()
-
-    def _expandvars(self, value):
+    def _expandvars(self, value: str) -> str:
         """
-        If you're not a stickler on the shell=True thing, then this is not necessary.
+        If you're not a stickler on the shell=True thing, then this is not
+        necessary.
         """
         # Safely expand date
         pattern = re.compile(r"\$\((date.*)\)")
@@ -101,14 +81,14 @@ class Task(dict):
         # Expand environment variables
         return os.path.expandvars(value)
 
-    def run(self):
+    def run(self) -> int:
         """
         Tasks are just shell commands, but we don't use shell=True because
         that's frowned upon.  There's quite a bit of extra work done here
         because of that.
         """
         if self["log"]:
-            out = open(self["log"], "a")
+            out = open(self["log"], "a")  # type: Union[int, TextIO]
         else:
             out = subprocess.PIPE
 
@@ -125,7 +105,7 @@ class Task(dict):
 
         return p.returncode
 
-    def log(self, text):
+    def log(self, text: str) -> None:
         if self["log"]:
             with open(self["log"], "a") as log:
                 log.write(text)
@@ -138,22 +118,22 @@ class Tasks:
     List of tasks from parsing a config file.
     """
 
-    def __init__(self, configs):
+    def __init__(self, configs: str) -> None:
         self.configs = configs
-        self.tasks = []
+        self.tasks = []  # type: List[Task]
         self.__tree = Graph()
 
         self.reload()
 
-    def reload(self):
+    def reload(self) -> None:
         """
         Refresh the task list via a separate function.  This way you can pick up
         any changes without restarting anything.
 
-        First create a list of Task objects by scanning all the config files. 
+        First create a list of Task objects by scanning all the config files.
         Afterward we loop over the tasks several times to create all the edges,
         which are used for determining the parent and child trees for each task.
-         For the parent tree, we store the immdiate parents in each task.  We
+        For the parent tree, we store the immdiate parents in each task.  We
         don't store the immediate childrem because there isn't a use for that
         data yet.
         """
@@ -162,7 +142,7 @@ class Tasks:
         self.get_task_by_name.cache_clear()
         self.get_child_tree.cache_clear()
         self.get_parent_tree.cache_clear()
-        
+
         for config in glob(self.configs):
             with open(config, "r") as cfg:
                 tmp = yaml.full_load(cfg)
@@ -191,20 +171,20 @@ class Tasks:
             task["parents"] = self.get_parent_tree(task["name"])[task["name"]]
 
     @functools.lru_cache(maxsize=None)
-    def get_tasks_by_trigger(self, trigger):
+    def get_tasks_by_trigger(self, trigger: str) -> List:
         return [task for task in self.tasks if trigger in task["triggers"]]
 
     @functools.lru_cache(maxsize=None)
-    def get_task_by_name(self, name):
+    def get_task_by_name(self, name: str) -> Union[Task, None]:
         for task in self.tasks:
             if task["name"] == name:
                 return task
-        
+
         return None
 
     @functools.lru_cache(maxsize=None)
-    def get_child_tree(self, name):
-        children = {name: []}
+    def get_child_tree(self, name: str) -> Dict:
+        children = {name: []}  # type: Dict[str, List[str]]
 
         for edge in self.__tree.edges:
             if name == edge.source:
@@ -214,8 +194,8 @@ class Tasks:
         return children
 
     @functools.lru_cache(maxsize=None)
-    def get_parent_tree(self, name):
-        parents = {name: []}
+    def get_parent_tree(self, name: str) -> Dict:
+        parents = {name: []}  # type: Dict[str, List[str]]
 
         for edge in self.__tree.edges:
             if name == edge.destination:
@@ -225,39 +205,22 @@ class Tasks:
         return parents
 
 
-
-# class Node:
-#     def __init__(self, name, data):
-#         self.name = name
-#         self.data = data
-
-#     def __repr__(self):
-#         return self.name
-
-
 class Edge:
-    def __init__(self, name, source, destination):
+    def __init__(self, name: str, source: str, destination: str) -> None:
         self.name = name
         self.source = source
         self.destination = destination
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.name}: {self.source} -> {self.destination}"
 
 
 class Graph:
-    def __init__(self):
-        # self.nodes = []
-        self.edges = []
+    def __init__(self) -> None:
+        self.edges = []  # type: List[Edge]
 
-    # def add_node(self, node):
-    #     self.nodes.append(node)
-
-    def add_edge(self, edge):
+    def add_edge(self, edge: Edge) -> None:
         self.edges.append(edge)
 
-    def __repr__(self):
-        return (
-            # f"nodes: {str(self.nodes)}\n\n"
-            f"edges: {str(self.edges)}"
-        )
+    def __repr__(self) -> str:
+        return f"edges: {str(self.edges)}"
