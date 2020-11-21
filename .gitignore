@@ -10,4 +10,4 @@ log.db
 test/
 reset.sh
 env.sh
-nohup.out
+nohup*
