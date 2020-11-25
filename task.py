@@ -97,7 +97,6 @@ class Task(dict):
             cmd,
             stdout=out,
             stderr=subprocess.STDOUT,
-            # env={"PATH": "/usr/local/bin/:/usr/bin:/bin:"},
             universal_newlines=True,
         )
         p.wait()
