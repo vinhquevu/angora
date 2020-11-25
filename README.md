@@ -271,17 +271,17 @@ application has a method of viewing workflows.  The user is encouraged to use
 this to aid in the building of any workflows.
 
 ### Schedules
-There are no acutal schedules in Angora.  How then do you schedule a job to run
+There are no actual schedules in Angora.  How then do you schedule a job to run
 at a certain time?  Keep in mind Angora is very simple, it's waiting to read a
 string off a message queue, and then execute any job it can match.  In order to
-schedule a job, you schedule the message, not the job.  The simplest way of
+schedule a job, **you schedule the message, not the job**.  The simplest way of
 doing this is using crontab.  We interface with Angora via a web API, so we're
 going to cron a curl command.
 ```
 */5 * 1-5 * * curl -d "msg=time.`date +'\%H\%M'`" "http://angora/send"
 ```
 Basically, at 1:05AM, this command will send a message of `time.0105` to the
-queue to be processed.  Any job with with that tirgger will then execute.
+queue to be processed.  Any job with that tirgger will then execute.
 There, that's scheduling.  Remember, you can have as many jobs with the same
 trigger as you want, so the same message of `time.0105` can trigger 100
 different jobs.
