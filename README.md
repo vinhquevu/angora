@@ -40,6 +40,7 @@ The following libraries are required.
 - FastAPI, `pip install fastapi`
 - Uvicorn, `pip install uvicorn`
 - HTTPX, `pip install httpx`
+- Python Multipart, `pip install python-multipart` (If you plan to use the included web app)
 
 ## Starting Angora
 
