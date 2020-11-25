@@ -5,16 +5,19 @@
         stroke-width: 1.5px;
         font-size: 5em;
     }
+
     .edgePath path {
         stroke: #333;
         stroke-width: 1.5px;
     }
+
     .task {
         margin-top: -.4em;
         /*margin: -.65em 0 0 -.55em;*/
         /*padding: .09em .38em .09em .38em;*/
         border-radius: 0;
     }
+
     .popover {
         max-width: none;
     }
@@ -29,11 +32,12 @@
 <svg id="svg_parents" class="container-fluid"></svg>
 
 <script type="text/javascript">
+    console.log("The formatting on this page exhibit strange behavior if you zoom in/out.  A fix is pending");
     function draw_graph(nodes, tasks, reverse) {
         let g = new dagreD3.graphlib.Graph()
             .setGraph({
                 "rankdir": "LR"
-            }).setDefaultEdgeLabel(function() { return {}; });
+            }).setDefaultEdgeLabel(function () { return {}; });
 
         for (var node in nodes) {
             g.setNode(node, {
@@ -59,7 +63,7 @@
 
     var children = JSON.parse('{{ children | tojson | safe }}');
     var parents = JSON.parse('{{ parents | tojson | safe }}');
-    var tasks = {{tasks | safe }};
+    var tasks = {{ tasks | safe }};
 
     var c = draw_graph(children, tasks, false);
     var p = draw_graph(parents, tasks, true);
@@ -86,12 +90,12 @@
                 html: true,
                 placement: 'auto',
                 trigger: 'manual',
-                content: function(i) { return $(this).find('div.d-none').html(); }
+                content: function (i) { return $(this).find('div.d-none').html(); }
             })
         });
 
         // Show the hidden popover on click of task
-        $('.task').click(function() {
+        $('.task').click(function () {
             $('[data-toggle="popover"]').popover('hide');
             $(this).popover('show');
         });

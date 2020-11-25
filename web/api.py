@@ -12,6 +12,7 @@ import uvicorn
 from fastapi import FastAPI, Query
 from starlette.middleware.cors import CORSMiddleware
 
+
 from angora import (
     EXCHANGE,
     USER,
@@ -32,16 +33,17 @@ TASKS = Tasks(CONFIGS)
 
 @app.get("/send")
 async def send(
-    message: str, queue: str, routing_key: str, params: List[str] = Query(None)
+    message: str, queue: str, routing_key: str, params: List[str] = Query([])
 ):
     """
     Send a message to Angora
     """
     print(message, queue, routing_key, params)
-    msg = Message(EXCHANGE, queue, message, data=params)
 
     try:
-        msg.send(USER, PASSWORD, HOST, PORT, routing_key)
+        Message(EXCHANGE, queue, message, data=params).send(
+            USER, PASSWORD, HOST, PORT, routing_key
+        )
     except AttributeError:
         status = "error"
     else:
@@ -208,23 +210,23 @@ async def get_task_log(name):
             log = task.get("log")
             break
     else:
-        return {"ok": False, "data": "NO MATCHING TASK"}
+        return {"data": "NO MATCHING TASK"}
 
     try:
         with open(log, "r") as _:
             return {"ok": True, "data": "".join(_.readlines()[-100:])}
     except IOError:
-        return {"ok": False, "data": "LOG FILE MISSING"}
+        return {"data": "LOG FILE MISSING"}
 
 
 @app.get("/task/children")
 async def get_task_children(name):
-    return {"ok": False, "data": TASKS.get_children(name)}
+    return {"data": TASKS.get_child_tree(name)}
 
 
 @app.get("/task/parents")
 async def get_task_parents(name):
-    return {"ok": False, "data": TASKS.get_parents(name)}
+    return {"data": TASKS.get_parent_tree(name)}
 
 
 if __name__ == "__main__":
