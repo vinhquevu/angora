@@ -1,40 +1,50 @@
 """
 Angora Database
 """
+# pylint: disable=too-many-arguments,too-few-public-methods,no-member
 import os
-import sqlite3
-from typing import Optional, Union, Generator, Dict, List
+from typing import Optional, Generator, Dict, List, Union
 from datetime import datetime, date
+from contextlib import contextmanager
 from sqlalchemy import (
     Column,
-    # Table,
     Integer,
     Text,
     DateTime,
     create_engine,
-    # MetaData,
+    cast,
 )
-
-from contextlib import contextmanager
-from sqlalchemy import cast, Date
 from sqlalchemy.sql import func, and_
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 
-_database = os.path.join(os.path.dirname(__file__), "log.db")
-_base = declarative_base()
+DATABASE = os.path.join(os.path.dirname(__file__), "log.db")
+ENGINE = create_engine("sqlite:///{}".format(DATABASE))
+SESSION = scoped_session(sessionmaker(bind=ENGINE))
+BASE = declarative_base()
 
 
 @contextmanager
 def _session() -> Generator:
-    engine = create_engine("sqlite:///{}".format(_database))
-    session = scoped_session(sessionmaker(autocommit=True, autoflush=True, bind=engine))
-    yield session
-    session.close()
+    session = SESSION()
+
+    try:
+        yield session
+        session.commit()
+        session.flush()
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()
 
 
-class Messages(_base):
+class Messages(BASE):
+    """
+    Messages table
+    """
+
     __tablename__ = "messages"
     message_id = Column("id", Integer, primary_key=True)
     exchange = Column("exchange", Text)
@@ -50,7 +60,11 @@ class Messages(_base):
     )
 
 
-class Tasks(_base):
+class Tasks(BASE):
+    """
+    Tasks table
+    """
+
     __tablename__ = "tasks"
     task_id = Column("id", Integer, primary_key=True)
     name = Column("name", Text)
@@ -63,13 +77,14 @@ class Tasks(_base):
 
 
 def init_db() -> None:
-    engine = create_engine("sqlite:///{}".format(_database))
+    """
+    Create database tables
+    """
+    if not ENGINE.dialect.has_table(ENGINE, "messages"):
+        BASE.metadata.tables["messages"].create(ENGINE)
 
-    if not engine.dialect.has_table(engine, "messages"):
-        _base.metadata.tables["messages"].create(engine)
-
-    if not engine.dialect.has_table(engine, "tasks"):
-        _base.metadata.tables["tasks"].create(engine)
+    if not ENGINE.dialect.has_table(ENGINE, "tasks"):
+        BASE.metadata.tables["tasks"].create(ENGINE)
 
 
 def insert_message(
@@ -79,24 +94,25 @@ def insert_message(
     data: Optional[Dict] = None,
     time_stamp: Optional[str] = None,
 ) -> None:
-    values = {
-        "exchange": exchange,
-        "queue": queue,
-        "message": message,
-    }
-
-    # Set Nullable values
-    if data:
-        values["data"] = str(data)
-
-    if time_stamp:
-        values["time_stamp"] = time_stamp
-
+    """
+    Insert message record into messages table
+    """
     with _session() as session:
-        session.execute(Messages.__table__.insert(), values)
+        session.add(
+            Messages(
+                exchange=exchange,
+                queue=queue,
+                message=message,
+                data=data,
+                time_stamp=time_stamp,
+            )
+        )
 
 
 def get_messages_today() -> List:
+    """
+    Query messages inserted since the start of the current day.
+    """
     with _session() as session:
         result = session.query(Messages.__table__).filter(
             Messages.time_stamp >= date.today()
@@ -114,28 +130,79 @@ def insert_task(
     status: str,
     time_stamp: Optional[str] = None,
 ) -> None:
-    values = {
-        "name": name,
-        "trigger": trigger,
-        "command": command,
-        "parameters": parameters,
-        "log": log,
-        "status": status,
-    }
+    """
+    Insert task records into tasks table
+    """
+    with _session() as session:
+        session.add(
+            Tasks(
+                name=name,
+                trigger=trigger,
+                command=command,
+                parameters=parameters,
+                log=log,
+                status=status,
+                time_stamp=time_stamp,
+            )
+        )
 
-    # Set Nullable values
-    if time_stamp:
-        values["time_stamp"] = time_stamp
+
+def get_tasks(
+    run_date: Optional[str] = None,
+    name: Optional[str] = None,
+    trigger: Optional[str] = None,
+    command: Optional[str] = None,
+    parameters: Optional[str] = None,
+    log: Optional[str] = None,
+    status: Optional[str] = None,
+    start_datetime: Union[datetime, date, None] = None,
+    end_datetime: Union[datetime, date, None] = None,
+) -> List:
+    """
+    Query tasks
+    """
+
+    filters = []
+
+    if run_date:
+        filters.append(cast(Tasks.time_stamp, Text).startswith(run_date))
+    if name:
+        filters.append(Tasks.name == name)
+    if trigger:
+        filters.append(Tasks.trigger == trigger)
+    if command:
+        filters.append(Tasks.command == command)
+    if parameters:
+        filters.append(Tasks.parameters == parameters)
+    if log:
+        filters.append(Tasks.log == log)
+    if status:
+        filters.append(Tasks.status == status)
+    if start_datetime:
+        filters.append(Tasks.time_stamp >= start_datetime)
+    if end_datetime:
+        filters.append(Tasks.time_stamp <= end_datetime)
 
     with _session() as session:
-        session.execute(Tasks.__table__.insert(), values)
+        query = (
+            session.query(Tasks.__table__).filter(*filters).order_by(Tasks.time_stamp)
+        )
+
+    return [dict(zip(row.keys(), row)) for row in query]
 
 
 def get_tasks_today(status: Optional[str] = None) -> List:
+    """
+    Query task records inserted since start of current day.
+    """
     return get_tasks(status=status, start_datetime=date.today())
 
 
 def get_tasks_latest(name: Optional[str] = None) -> List:
+    """
+    Query the lastest instance of each unique task since the start of the
+    current day.
+    """
     filters = [Tasks.time_stamp >= date.today()]
 
     if name:
@@ -164,47 +231,8 @@ def get_tasks_latest(name: Optional[str] = None) -> List:
     return [dict(zip(row.keys(), row)) for row in query]
 
 
-def get_tasks(
-    run_date: Optional[str] = None,
-    name: Optional[str] = None,
-    trigger: Optional[str] = None,
-    command: Optional[str] = None,
-    parameters: Optional[str] = None,
-    log: Optional[str] = None,
-    status: Optional[str] = None,
-    start_datetime: Union[datetime, date, None] = None,
-    end_datetime: Union[datetime, date, None] = None,
-) -> List:
-
-    filters = []
-
-    if run_date:
-        filters.append(cast(Tasks.time_stamp, Text).startswith(run_date))
-    if name:
-        filters.append(Tasks.name == name)
-    if trigger:
-        filters.append(Tasks.trigger == trigger)
-    if parameters:
-        filters.append(Tasks.parameters == parameters)
-    if log:
-        filters.append(Tasks.log == log)
-    if status:
-        filters.append(Tasks.status == status)
-    if start_datetime:
-        filters.append(Tasks.time_stamp >= start_datetime)
-    if end_datetime:
-        filters.append(Tasks.time_stamp <= end_datetime)
-
-    with _session() as session:
-        query = (
-            session.query(Tasks.__table__).filter(*filters).order_by(Tasks.time_stamp)
-        )
-
-    return [dict(zip(row.keys(), row)) for row in query]
-
-
 # def clearDB():
-#     with sqlite3.connect(_database) as conn:
+#     with sqlite3.connect(DATABASE) as conn:
 #         conn.execute("DELETE FROM messages;")
 #         conn.execute("DELETE FROM tasks;")
 
