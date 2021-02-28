@@ -33,7 +33,7 @@ TASKS = Tasks(CONFIGS)
 # Celery #
 # ########
 # Name has to be the same as the module that contains the task.  In this case
-# it's "angora"
+# it's "main"
 app = Celery("main", inlcude="main")
 app.conf.update(accept_content=["application/json"], task_serializer="json")
 
@@ -41,7 +41,12 @@ app.conf.update(accept_content=["application/json"], task_serializer="json")
 @app.task()
 def run(payload: Dict) -> int:
     """
-    The lone Celery task.
+    Run
+
+    This is the sole Celery task.  Typically, Celery applications run different
+    Python functions and are identified by Celery with the @app.task decorator.
+    Angora has just one Celery task, but what we run is a shell command which
+    is executed via subprocess.
     """
     trigger = payload["message"]
     task = Task(**payload["data"])
