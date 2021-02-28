@@ -43,7 +43,6 @@ The following libraries are required.
 - Python Multipart, `pip install python-multipart` (If you plan to use the included web app)
 
 ## Starting Angora
-
 Make sure the angora folder is on the PYTHONPATH.
 ```
     export PYTHONPATH=/path/to/angora:$PYTHTONPATH
@@ -62,7 +61,7 @@ The CLI for Angora is main.py.  You'll need to start:
 1. Initialize the database
 2. Start the main server
 3. Start a client
-4. Start a celery worker (See Celery section)
+4. Start a celery worker
 5. Start the replay queue
 6. Start the web API
 7. Start the web app (optional)
@@ -70,7 +69,10 @@ The CLI for Angora is main.py.  You'll need to start:
 #### Database
 `./main.py initdb`
 
-Angora uses a SQLite database for logging messages and tasks.  There are only two tables, Messages, which stores all the messages received by Angora, and Tasks, which stores data about each task run by Angora.  The data in these tables is used by the web API to report all of the task statuses.
+Angora uses a SQLite database for logging messages and tasks.  There are only
+two tables, Messages, which stores all the messages received by Angora, and
+Tasks, which stores data about each task run by Angora.  The data in these
+tables is used by the web API to report all of the task statuses.
 
 #### Server
 `./main.py server`
@@ -115,7 +117,9 @@ run by uvicorn.
 ### Celery
 You need to start the Celery worker from the directory containing the celery
 jobs to run.  In the case of Angora there is only one and it is in `main.py`.
-You need to start a Celery worker on each client.  You can do so using the standard command line or from an option in `main.py`.  The former may provide more options not available under `main.py`.
+You need to start a Celery worker on each client.  You can do so using the
+standard command line or from an option in `main.py`.  The former may provide
+more options not available under `main.py`.
 
 `celery -A angora.main worker --concurrency=8 --loglevel=debug -Ofair 2>&1` or `./main.py celery`
 
@@ -315,3 +319,5 @@ COMING SOON
 4. Create the concept of a unique run id
 5. Control EVERYTHING from the API
 6. Test with Redis
+7. Create replay queue in server
+8. Execute a task over a date range
