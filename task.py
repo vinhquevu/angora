@@ -37,7 +37,7 @@ class Task(dict):
         self["parent_success"] = parent_success
         self["replay"] = replay
         self["config_source"] = config_source
-        self["parents"] = parents
+        self["parents"] = parents  # For determining parent success
         self["messages"] = messages
         self["parameters"] = parameters
 
@@ -92,7 +92,9 @@ class Task(dict):
         else:
             out = subprocess.PIPE
 
-        cmd = shlex.split(self["command"]) + self["parameters"]
+        cmd = shlex.split(self["command"]) + (
+            self["parameters"] if self["parameters"] else []
+        )
         p = subprocess.Popen(
             cmd,
             stdout=out,
@@ -132,8 +134,8 @@ class Tasks:
         First create a list of Task objects by scanning all the config files.
         Afterward we loop over the tasks several times to create all the edges,
         which are used for determining the parent and child trees for each task.
-        For the parent tree, we store the immdiate parents in each task.  We
-        don't store the immediate childrem because there isn't a use for that
+        For the parent tree, we store the immediate parents in each task.  We
+        don't store the immediate children because there isn't a use for that
         data yet.
         """
         self.tasks.clear()
