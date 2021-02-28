@@ -28,6 +28,7 @@ from angora.message import Message
 app = FastAPI(version="0.0.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
+# TODO: move to startup class
 TASKS = Tasks(CONFIGS)
 
 
@@ -67,13 +68,6 @@ async def get_tasks(name=None):
     return {"data": all_tasks}
 
 
-@app.get("/tasks/today")
-async def get_tasks_today(status=None):
-    tasks = db.get_tasks_today(status=status)
-
-    return {"data": tasks}
-
-
 @app.get("/tasks/today/notrun")
 async def get_tasks_notrun():
     all_tasks = TASKS.tasks
@@ -82,6 +76,13 @@ async def get_tasks_notrun():
     notrun = [task for task in all_tasks if task["name"] not in tasks_today]
 
     return {"data": notrun}
+
+
+@app.get("/tasks/today/{status}")
+async def get_tasks_today(status=None):
+    tasks = db.get_tasks_today(status=status)
+
+    return {"data": tasks}
 
 
 @app.get("/tasks/lastruntime")

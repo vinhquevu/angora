@@ -29,28 +29,23 @@ async def load_dashboard_view(request):
     url = f"http://{API}/tasks/today"
 
     async with httpx.AsyncClient() as client:
-        params = {"status": "start"}
-        response = await client.get(url, params=params)
+        response = await client.get(f"{url}/start")
         response.raise_for_status()
         executed = response.json()["data"]
 
-        params = {"status": "success"}
-        response = await client.get(url, params=params)
+        response = await client.get(f"{url}/success")
         response.raise_for_status()
         successful = response.json()["data"]
 
-        params = {"status": "fail"}
-        response = await client.get(url, params=params)
+        response = await client.get(f"{url}/fail")
         response.raise_for_status()
         failed = response.json()["data"]
 
-        params = {"status": "replay"}
-        response = await client.get(url, params=params)
+        response = await client.get(f"{url}/replay")
         response.raise_for_status()
         replayed = response.json()["data"]
 
-        url = f"http://{API}/tasks/today/notrun"
-        response = await client.get(url)
+        response = await client.get(f"{url}/notrun")
         response.raise_for_status()
         notrun = response.json()["data"]
 
@@ -241,9 +236,7 @@ async def reload_tasks(request):
         response = await client.get(url)
         response.raise_for_status()
 
-    message = (
-        "Configuration files reloaded.  Any updates to tasks have been loaded."
-    )
+    message = "Configuration files reloaded.  Any updates to tasks have been loaded."
 
     context = {"request": request, "message": message}
 
