@@ -1,76 +1,70 @@
--   name: made_up_time_1
-    triggers:
-        -   time.0100
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_1
+  triggers:
+    - time.0100
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_2
-    triggers:
-        -   time.0200
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_2
+  triggers:
+    - time.0200
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_3
-    triggers:
-        -   time.0300
-        -   time.0400
-        -   time.0500
-        -   time.0600
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_3
+  triggers:
+    - time.0300
+    - time.0400
+    - time.0500
+    - time.0600
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_4
-    triggers:
-        -   time.0400
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_4
+  triggers:
+    - time.0400
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_5
-    triggers:
-        -   time.0500
-        -   time.0600
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_5
+  triggers:
+    - time.0500
+    - time.0600
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_6
-    triggers:
-        -   time.0600
-        -   time.1200
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_6
+  triggers:
+    - time.0600
+    - time.1200
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_7
-    triggers:
-        -   time.1300
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_7
+  triggers:
+    - time.1300
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_8
-    triggers:
-        -   time.0315
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: made_up_time_8
+  triggers:
+    - time.0315
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: made_up_time_8
-    triggers:
-        -   time.0315
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: test_interval_1
+  triggers:
+    - time.interval.5
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: test_interval_1
-    triggers:
-        -   time.interval.5
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: test_interval_2
+  triggers:
+    - time.interval.10
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: test_interval_2
-    triggers:
-        -   time.interval.10
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
-
--   name: test_interval_3
-    triggers:
-        -   time.interval.15
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: test_interval_3
+  triggers:
+    - time.interval.15
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
