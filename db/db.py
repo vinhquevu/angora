@@ -103,7 +103,7 @@ def insert_message(
                 exchange=exchange,
                 queue=queue,
                 message=message,
-                data=data,
+                data=str(data),
                 time_stamp=time_stamp,
             )
         )
