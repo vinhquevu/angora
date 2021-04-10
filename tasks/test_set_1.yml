@@ -1,38 +1,40 @@
--   name: print_environment_variables
-    triggers:
-        -   shell.print.env
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
-    messages:
-        -   shell.print.message.test
+- name: print_environment_variables
+  triggers:
+    - shell.print.env
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
+  messages:
+    - shell.print.message.test
 
--   name: print_test_message
-    triggers:
-        -   shell.print.message.test
-    command: "echo 'THIS IS A TEST'"
-    log: "$HOME/workspace/angora/logs/"
+- name: print_test_message
+  triggers:
+    - shell.print.message.test
+  command: "echo 'THIS IS A TEST'"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: test_date
-    triggers: shell.print.date
-    command: "date"
-    log: "$HOME/workspace/angora/logs/"
+- name: test_date
+  triggers:
+    - shell.print.date
+  command: "date"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: test_date_2
-    triggers: shell.print.date.2
-    command: "echo $(date '+%Y%m%d')"
-    log: "$HOME/workspace/angora/logs/"
+- name: test_date_2
+  triggers:
+    - shell.print.date.2
+  command: "echo $(date '+%Y%m%d')"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: parent_success_test_1
-    triggers:
-        -   test.parent.success.01
-    command: "env"
-    log: $HOME/workspace/angora/logs/
-    messages:
-        -   test.parent.success.02
+- name: parent_success_test_1
+  triggers:
+    - test.parent.success.01
+  command: "env"
+  log: $HOME/workspace/angora/logs/
+  messages:
+    - test.parent.success.02
 
--   name: parent_success_test_2
-    triggers:
-        -   test.parent.success.02
-    command: "env"
-    log: $HOME/workspace/angora/logs/
-    parent_success: True
+- name: parent_success_test_2
+  triggers:
+    - test.parent.success.02
+  command: "env"
+  log: $HOME/workspace/angora/logs/
+  parent_success: True
