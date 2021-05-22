@@ -102,7 +102,6 @@ async def get_tasks_last_run_time(name=None):
     for task in all_tasks:
         status = None
         time_stamp = None
-        last_run_time = "Never"
 
         for lt in last_task:
             if lt["name"] == task["name"]:
@@ -113,15 +112,8 @@ async def get_tasks_last_run_time(name=None):
                 elif lt["time_stamp"] > time_stamp:
                     time_stamp = lt["time_stamp"]
 
-                delta = relativedelta(datetime.utcnow(), time_stamp)
-
-                last_run_time = "{} hr {} min {} sec".format(
-                    delta.hours, delta.minutes, delta.seconds
-                )
-
         task["status"] = status
         task["time_stamp"] = time_stamp
-        task["last_run_time"] = last_run_time
 
     return {"data": all_tasks}
 
