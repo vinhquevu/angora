@@ -1,17 +1,23 @@
--   name: run_failure_script_1
-    triggers:
-        -   python.script.fail.1
-    command: "$HOME/workspace/angora/test/fail_test_1.py"
-    log: "$HOME/workspace/angora/logs/"
+- name: run_failure_script_1
+  triggers:
+    - python.script.fail.1
+  command: "$HOME/workspace/angora/test/fail_test_1.py"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: run_arg_test_script
-    triggers:
-        -   python.script.argtest
-    command: "$HOME/workspace/angora/test/arg_test.py"
-    log: "$HOME/workspace/angora/logs/"
+- name: run_arg_test_script
+  triggers:
+    - python.script.argtest
+  command: "$HOME/workspace/angora/test/arg_test.py"
+  log: "$HOME/workspace/angora/logs/"
 
--   name: test_reload
-    triggers:
-        -   python.reload.test
-    command: "env"
-    log: "$HOME/workspace/angora/logs/"
+- name: test_reload
+  triggers:
+    - python.reload.test
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
+
+- name: sleeping_job
+  triggers:
+    - test.sleep.15
+  command: "sleep 15"
+  log: "$HOME/workspace/angora/logs/"

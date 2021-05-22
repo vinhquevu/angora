@@ -95,6 +95,7 @@ class Task(dict):
         cmd = shlex.split(self["command"]) + (
             self["parameters"] if self["parameters"] else []
         )
+
         p = subprocess.Popen(
             cmd,
             stdout=out,

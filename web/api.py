@@ -53,11 +53,6 @@ async def send(
     return {"status": status, "data": message}
 
 
-@app.get("/tasks/reload")
-async def reload_tasks():
-    TASKS.reload()
-
-
 @app.get("/tasks")
 async def get_tasks(name=None):
     all_tasks = TASKS.tasks
@@ -66,6 +61,11 @@ async def get_tasks(name=None):
         all_tasks = [task for task in all_tasks if task["name"] == name]
 
     return {"data": all_tasks}
+
+
+@app.get("/tasks/reload")
+async def reload_tasks():
+    TASKS.reload()
 
 
 @app.get("/tasks/today/notrun")
@@ -128,7 +128,7 @@ async def get_tasks_last_run_time(name=None):
 
 def _format_category(category):
     """
-    For convenience. This does assume a snake case naming convention for task yaml config files.
+    For convenience. This assumes a snake case naming convention for task yaml config files.
     """
     return category.rstrip(".yml").rstrip(".yaml").replace("_", " ").upper()
 
