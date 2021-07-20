@@ -163,6 +163,7 @@ async def get_tasks_scheduled():
 
                 scheduled_tasks.setdefault(time, []).append(task)
 
+    scheduled_tasks = {key: scheduled_tasks[key] for key in sorted(scheduled_tasks)}
     return {"data": scheduled_tasks}
 
 
