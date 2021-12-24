@@ -4,8 +4,7 @@ Main Angora entry point.  Start each component of Angora from here.
 """
 import os
 import argparse
-import subprocess
-
+import logging
 from typing import Dict
 from functools import partial
 
@@ -28,6 +27,7 @@ from angora import (
 )
 
 TASKS = Tasks(CONFIGS)
+log = logging.getLogger("")
 
 ##########
 # Celery #
@@ -50,6 +50,8 @@ def run(payload: Dict) -> int:
     """
     trigger = payload["message"]
     task = Task(**payload["data"])
+    print(f"RUN: {task}")
+    log.info(f"RUN: {task}")
 
     if payload["queue"] == "replay":
         status = payload["queue"]
@@ -117,15 +119,20 @@ def run(payload: Dict) -> int:
 
 
 def archive(payload: Dict, _: kombu.Message) -> None:
+    print(f"ARCHIVE: {payload}")
+    log.info(f"ARCHIVE: {payload}")
     db.insert_message(**payload)
 
 
 def parse_task(payload: Dict, _: kombu.Message) -> None:
+    print(f"PARSE TASK: {payload}")
+    log.info(f"PARSE TASK: {payload}")
     task_queue_name = os.uname()[1]
     tasks = TASKS.get_tasks_by_trigger(payload["message"])
 
     for task in tasks:
         task["parameters"] = payload["data"]
+        print(task)
         Message(EXCHANGE, task_queue_name, payload["message"], data=task).send(
             USER, PASSWORD, HOST, PORT, task_queue_name
         )
@@ -133,7 +140,7 @@ def parse_task(payload: Dict, _: kombu.Message) -> None:
 
 def maintain_db(args: argparse.Namespace) -> None:
     """
-    Initialize the database with Messages and Tasks tables.  Just calles
+    Initialize the database with Messages and Tasks tables.  Just calls
     init_db() from the db module.
     """
     db.init_db()
