@@ -13,8 +13,10 @@ from typing import List, Dict, Optional, Union, TextIO
 
 class Task(dict):
     """
-    The Task object.  Stores all the task attributes and the run command to
+    The Task object.  Stores all the task attributes and the run() method to
     execute the task.  Inherits dict to make it JSON serializable.
+
+    TODO: Don't inherit dict
     """
 
     def __init__(
@@ -62,7 +64,7 @@ class Task(dict):
     def _expandvars(self, value: str) -> str:
         """
         If you're not a stickler on the shell=True thing, then this is not
-        necessary.
+        necessary.  Currently handles dates and envrionment variables.
         """
         # Safely expand date
         pattern = re.compile(r"\$\((date.*)\)")
@@ -118,6 +120,11 @@ class Task(dict):
 class Tasks:
     """
     List of tasks from parsing a config file.
+
+    Once the list of tasks is constructed, this class has several methods to
+    make accessing tasks in different ways simpler.
+
+    TODO: Make into interable
     """
 
     def __init__(self, configs: str) -> None:
@@ -126,6 +133,40 @@ class Tasks:
         self.__tree = Graph()
 
         self.reload()
+
+    @functools.lru_cache(maxsize=None)
+    def get_tasks_by_trigger(self, trigger: str) -> List:
+        return [task for task in self.tasks if trigger in task["triggers"]]
+
+    @functools.lru_cache(maxsize=None)
+    def get_task_by_name(self, name: str) -> Union[Task, None]:
+        for task in self.tasks:
+            if task["name"] == name:
+                return task
+
+        return None
+
+    @functools.lru_cache(maxsize=None)
+    def get_child_tree(self, name: str) -> Dict:
+        children = {name: []}  # type: Dict[str, List[str]]
+
+        for edge in self.__tree.edges:
+            if name == edge.source:
+                children[name].append(edge.destination)
+                children.update(self.get_child_tree(edge.destination))
+
+        return children
+
+    @functools.lru_cache(maxsize=None)
+    def get_parent_tree(self, name: str) -> Dict:
+        parents = {name: []}  # type: Dict[str, List[str]]
+
+        for edge in self.__tree.edges:
+            if name == edge.destination:
+                parents[name].append(edge.source)
+                parents.update(self.get_parent_tree(edge.source))
+
+        return parents
 
     def reload(self) -> None:
         """
@@ -169,45 +210,44 @@ class Tasks:
                 if oedge == iedge:
                     self.__tree.add_edge(Edge(iedge, overtex, ivertex))
 
+        # get_parent_tree is recursive and we only need the first level, because
+        # the function is cached and we use the data in other places we don't
+        # incur a heavy penalty
         for task in self.tasks:
             task["parents"] = self.get_parent_tree(task["name"])[task["name"]]
 
-    @functools.lru_cache(maxsize=None)
-    def get_tasks_by_trigger(self, trigger: str) -> List:
-        return [task for task in self.tasks if trigger in task["triggers"]]
-
-    @functools.lru_cache(maxsize=None)
-    def get_task_by_name(self, name: str) -> Union[Task, None]:
-        for task in self.tasks:
-            if task["name"] == name:
-                return task
-
-        return None
-
-    @functools.lru_cache(maxsize=None)
-    def get_child_tree(self, name: str) -> Dict:
-        children = {name: []}  # type: Dict[str, List[str]]
-
-        for edge in self.__tree.edges:
-            if name == edge.source:
-                children[name].append(edge.destination)
-                children.update(self.get_child_tree(edge.destination))
-
-        return children
-
-    @functools.lru_cache(maxsize=None)
-    def get_parent_tree(self, name: str) -> Dict:
-        parents = {name: []}  # type: Dict[str, List[str]]
-
-        for edge in self.__tree.edges:
-            if name == edge.destination:
-                parents[name].append(edge.source)
-                parents.update(self.get_parent_tree(edge.source))
-
-        return parents
-
 
 class Edge:
+    """
+    A connection between two tasks.
+
+    name: The message/trigger of a Task.
+
+    source: The task name of the calling task.  This means the "name" was in the
+    messages attribute of the task.
+
+    destination: The task name of the called task.  This means the "name" was in
+    the triggers attribute of the task.
+
+    e.g.
+    name: source_task
+    trigger:
+        - trigger_1
+    cmd: some_command_1
+    messages:
+        - message_1
+
+    name: destination_task
+    trigger:
+        - message_1
+    cmd: some_command_2
+    messages:
+        - message_2
+
+    Result: Edge<message_1, source_task, destination_task>
+
+    """
+
     def __init__(self, name: str, source: str, destination: str) -> None:
         self.name = name
         self.source = source
@@ -218,6 +258,11 @@ class Edge:
 
 
 class Graph:
+    """
+    The graph is a collection of edges.  The edges are formed by the message ->
+    trigger relationships in the task.
+    """
+
     def __init__(self) -> None:
         self.edges = []  # type: List[Edge]
 
