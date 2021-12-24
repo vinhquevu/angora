@@ -28,7 +28,6 @@ from angora.message import Message
 app = FastAPI(version="0.0.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
-# TODO: move to startup class
 TASKS = Tasks(CONFIGS)
 
 
@@ -89,9 +88,12 @@ async def get_tasks_today(status=None):
 async def get_tasks_last_run_time(name=None):
     """
     Return a list of tasks with the last run time stats.  The tasks returned
-    will not be Task objects, instead the process will serialize the object
-    into a dictionary (json) and you'll lose any attributes associated with
-    the Task object.
+    will not be Task objects, instead the process will serialize the object into
+    a dictionary (json) and you'll lose any attributes associated with the Task
+    object.
+
+    TODO: make db.get_tasks_latest() accept an arg for better performance. Make
+    TASKS work when passing in a key.
     """
     all_tasks = TASKS.tasks
     last_task = db.get_tasks_latest()
@@ -218,9 +220,38 @@ async def get_task_children(name):
     return {"data": TASKS.get_child_tree(name)}
 
 
+@app.get("/task/children/lastruntime")
+async def get_task_children_lastruntime(name):
+    child_tree = TASKS.get_child_tree(name)
+    tasks_lastruntime = await get_tasks_last_run_time()
+
+    data = {}
+
+    for task_name, children in child_tree.items():
+        for task in tasks_lastruntime["data"]:
+            if task["name"] == task_name:
+                data[task_name] = {
+                    "status": task["status"],
+                    "time_stamp": task["time_stamp"],
+                    "children": children,
+                }
+                break
+
+    return {"data": data}
+
+
 @app.get("/task/parents")
 async def get_task_parents(name):
     return {"data": TASKS.get_parent_tree(name)}
+
+
+@app.get("/task/familytree")
+async def get_family_tree(name):
+    """
+    Get parents and children and combine into one dictionary.
+
+    In Python 3.9+ you can use the "|"
+    """
 
 
 if __name__ == "__main__":
