@@ -68,3 +68,9 @@
     - time.interval.15
   command: "env"
   log: "$HOME/workspace/angora/logs/"
+
+- name: test_interval_4
+  triggers:
+    - time.interval.15
+  command: "env"
+  log: "$HOME/workspace/angora/logs/"
