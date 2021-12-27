@@ -1,11 +1,10 @@
 #! /usr/bin/env python3
-import os
 import re
 import argparse
 
-from typing import List
-from datetime import datetime
-from dateutil.relativedelta import relativedelta
+from typing import Any, Dict, List
+
+from collections import defaultdict
 
 import uvicorn
 
@@ -36,7 +35,7 @@ async def send(
     message: str, queue: str, routing_key: str, params: List[str] = Query([])
 ):
     """
-    Send a message to Angora
+    Send a message to Angora.
     """
     print(message, queue, routing_key, params)
 
@@ -54,6 +53,9 @@ async def send(
 
 @app.get("/tasks")
 async def get_tasks(name=None):
+    """
+    Retrieve a task(s).
+    """
     all_tasks = TASKS.tasks
 
     if name:
@@ -64,6 +66,9 @@ async def get_tasks(name=None):
 
 @app.get("/tasks/reload")
 async def reload_tasks():
+    """
+    Refresh data in tasks object
+    """
     TASKS.reload()
 
 
@@ -79,6 +84,10 @@ async def get_tasks_notrun():
 
 @app.get("/tasks/today/{status}")
 async def get_tasks_today(status=None):
+    """
+    Return tasks run today with a certain status.  If status is left blank, then
+    return all teaks run today.
+    """
     tasks = db.get_tasks_today(status=status)
 
     return {"data": tasks}
@@ -122,7 +131,8 @@ async def get_tasks_last_run_time(name=None):
 
 def _format_category(category):
     """
-    For convenience. This assumes a snake case naming convention for task yaml config files.
+    For convenience. This assumes a snake case naming convention for task yaml
+    config files.
     """
     return category.rstrip(".yml").rstrip(".yaml").replace("_", " ").upper()
 
@@ -142,28 +152,32 @@ async def get_task_categories():
 async def get_task_last_run_time_by_category():
     tasks = await get_tasks_last_run_time()
 
-    data = {}
+    data = defaultdict(lambda: [])
 
     for task in tasks["data"]:
-        data.setdefault(_format_category(task["config_source"]), []).append(task)
+        data[_format_category(task["config_source"])].append(task)
 
     return {"data": data}
 
 
 @app.get("/tasks/scheduled")
 async def get_tasks_scheduled():
+    """
+    Retrieve all tasks that have a time trigger
+    """
     tasks = await get_tasks_last_run_time()
 
+    # Hard coded pattern for time messages
     pattern = re.compile(r"time.\d{4}")
 
-    scheduled_tasks = {}
+    scheduled_tasks = defaultdict(lambda: [])
 
     for task in tasks["data"]:
         for trigger in task["triggers"]:
             if pattern.match(trigger):
                 time = f"{trigger[5:7]}:{trigger[7:9]}"
 
-                scheduled_tasks.setdefault(time, []).append(task)
+                scheduled_tasks[time].append(task)
 
     scheduled_tasks = {key: scheduled_tasks[key] for key in sorted(scheduled_tasks)}
     return {"data": scheduled_tasks}
@@ -171,6 +185,9 @@ async def get_tasks_scheduled():
 
 @app.get("/tasks/repeating")
 async def get_tasks_repeating():
+    """
+    Retrieve all tasks that have a repeating interval trigger
+    """
     tasks = await get_tasks_last_run_time()
 
     pattern = re.compile(r"time.interval.\d+")
@@ -196,7 +213,7 @@ async def get_task_history(run_date, name):
 @app.get("/task/log")
 async def get_task_log(name):
     """
-    This assumes that logs are files that are accessible to the api.
+    This assumes that logs are files that are accessible to the API.
     """
     for task in TASKS.tasks:
         if task["name"] == name:
@@ -217,11 +234,19 @@ async def get_task_log(name):
 
 @app.get("/task/children")
 async def get_task_children(name):
+    """
+    Retrieve all the child tasks for a specified task.
+    """
     return {"data": TASKS.get_child_tree(name)}
 
 
 @app.get("/task/children/lastruntime")
 async def get_task_children_lastruntime(name):
+    """
+    Retrieve all the child tasks for a specified task but also include the
+    status and runtime of the most recently run instance.
+    """
+
     child_tree = TASKS.get_child_tree(name)
     tasks_lastruntime = await get_tasks_last_run_time()
 
@@ -242,16 +267,59 @@ async def get_task_children_lastruntime(name):
 
 @app.get("/task/parents")
 async def get_task_parents(name):
+    """
+    Retrieve all the parent tasks for a specified task.
+    """
     return {"data": TASKS.get_parent_tree(name)}
 
 
-@app.get("/task/familytree")
-async def get_family_tree(name):
+@app.get("/task/parents/lastruntime")
+async def get_task_parents_lastruntime(name):
     """
-    Get parents and children and combine into one dictionary.
+    Retrieve all the parent tasks for a specified task but also include the
+    status and runtime of the most recently run instance.
+    """
+    parent_tree = TASKS.get_parent_tree(name)
+    tasks_lastruntime = await get_tasks_last_run_time()
+
+    data = {}
+
+    for task_name, parents in parent_tree.items():
+        for task in tasks_lastruntime["data"]:
+            if task["name"] == task_name:
+                data[task_name] = {
+                    "status": task["status"],
+                    "time_stamp": task["time_stamp"],
+                    "parents": parents,
+                }
+                break
+
+    return {"data": data}
+
+
+@app.get("/task/family/lastruntime")
+async def get_family_tree(name: str) -> Dict[str, Any]:
+    """
+    Retrieve parents and children and combine into one dictionary.
+
+    NOTE: The root, or task passed in as name, will be the only task with both a
+    "parents" and "children" key.
 
     In Python 3.9+ you can use the "|"
     """
+
+    children = await get_task_children_lastruntime(name)
+    parents = await get_task_parents_lastruntime(name)
+
+    data = defaultdict(lambda: {})
+
+    for task_name, value in parents["data"].items():
+        data[task_name] = {**data[task_name], **value}
+
+    for task_name, value in children["data"].items():
+        data[task_name] = {**data[task_name], **value}
+
+    return {"data": data}
 
 
 if __name__ == "__main__":
