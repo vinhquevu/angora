@@ -2,15 +2,21 @@
 Angora Message
 """
 from typing import Dict, Optional, Union
-from kombu import Connection, Producer
+from kombu import Connection, Producer  # type: ignore
 
 
-class Message(dict):
+class Message:
     """
-    Message protocol, basically a modified python dictionary.  Inherit dict to make it JSON serializable.
+    Message object
     """
 
-    __keys = ("exchange", "queue", "message", "time_stamp", "data")
+    __slots__ = [
+        "exchange",
+        "queue",
+        "message",
+        "time_stamp",
+        "data",
+    ]
 
     def __init__(
         self,
@@ -28,28 +34,39 @@ class Message(dict):
         :param message: A string message, format is up to the user
         :type msg: str
         :param time_stamp: A time stamp
-        :type time_stamp: datetime
+        :type time_stamp: str
         :param data: Any serializable object
         :type data: object
         """
 
-        self["exchange"] = exchange
-        self["queue"] = queue
-        self["message"] = message
-        self["time_stamp"] = time_stamp
-        self["data"] = data
+        self.exchange = exchange
+        self.queue = queue
+        self.message = message
+        self.time_stamp = time_stamp
+        self.data = data
 
-        super().__init__()
+    def send(
+        self,
+        user: str,
+        password: str,
+        host: str,
+        port: Union[str, int],
+        routing_key: str,
+    ) -> None:
+        """
+        Send the message to ampq message queue.  The body passed to publish()
+        must be JSON serializable (which a dictionary is).
+        """
+        msg = {
+            "exchange": self.exchange,
+            "queue": self.queue,
+            "message": self.message,
+            "time_stamp": self.time_stamp,
+            "data": self.data,
+        }
 
-    def __setitem__(self, key: str, value: Union[str, Dict]) -> None:
-        if key in self.__keys:
-            super().__setitem__(key, value)
-        else:
-            raise KeyError("{} is not a valid key".format(key))
-
-    def send(self, user, password, host, port, routing_key) -> None:
-        connection_str = "amqp://{}:{}@{}:{}//".format(user, password, host, port)
+        connection_str = f"amqp://{user}:{password}@{host}:{port}//"
 
         with Connection(connection_str) as conn:
             producer = Producer(conn)
-            producer.publish(self, exchange=self["exchange"], routing_key=routing_key)
+            producer.publish(msg, exchange=self.exchange, routing_key=routing_key)
