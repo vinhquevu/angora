@@ -60,19 +60,19 @@ def run(payload: Dict) -> int:
 
     insert_task = partial(
         db.insert_task,
-        task["name"],
+        task.name,
         trigger,
-        task["command"],
-        str(task["parameters"]),
-        task["log"],
+        task.command,
+        str(task.parameters),
+        task.log,
     )
 
     # Archive the task
     insert_task(status=status)
 
     # Parent Success
-    if task["parent_success"]:
-        for parent in task["parents"]:
+    if task.parent_success:
+        for parent in task.parents:
             try:
                 status = db.get_tasks_latest(parent)[0].get("status")
             except IndexError:
@@ -82,7 +82,7 @@ def run(payload: Dict) -> int:
                     # Insert fail message, no replay regardless of setting
                     insert_task(status="fail")
 
-                    task.log("PARENT SUCCESS CHECK FAILED")
+                    task.write_log("PARENT SUCCESS CHECK FAILED")
 
                     return 1
 
@@ -92,9 +92,9 @@ def run(payload: Dict) -> int:
     if retval == 0:
         insert_task(status="success")
 
-        # task["messages"] can be None or not set at all
+        # task.messages can be None or not set at all
         for message in task.get("messages", []) or []:
-            Message(EXCHANGE, "angora", message, data=task["parameters"]).send(
+            Message(EXCHANGE, "angora", message, data=task.parameters).send(
                 USER, PASSWORD, HOST, PORT, "angora"
             )
 
@@ -105,15 +105,15 @@ def run(payload: Dict) -> int:
         # Replay
         # If replay is None (infinite)
         # if replay is greater than zero
-        if task["replay"] is None:
+        if task.replay is None:
             Message(EXCHANGE, "replay", trigger, data=task).send(
                 USER, PASSWORD, HOST, PORT, "replay"
             )
-        elif task["replay"] > 0:
+        elif task.replay > 0:
             Message(EXCHANGE, "replay", trigger, data=task).send(
                 USER, PASSWORD, HOST, PORT, "replay"
             )
-            task["replay"] -= 1
+            task.replay -= 1
 
     return retval
 
@@ -131,9 +131,9 @@ def parse_task(payload: Dict, _: kombu.Message) -> None:
     tasks = TASKS.get_tasks_by_trigger(payload["message"])
 
     for task in tasks:
-        task["parameters"] = payload["data"]
+        task.parameters = payload["data"]
         print(task)
-        Message(EXCHANGE, task_queue_name, payload["message"], data=task).send(
+        Message(EXCHANGE, task_queue_name, payload["message"], data=task.dict()).send(
             USER, PASSWORD, HOST, PORT, task_queue_name
         )
 
@@ -196,7 +196,7 @@ def start_celery(args: argparse.Namespace) -> None:
 
 
 def start_web(args: argparse.Namespace) -> None:
-    import uvicorn
+    import uvicorn  # type: ignore
 
     print(f"Starting web {args.module}")
 

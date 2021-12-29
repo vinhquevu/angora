@@ -8,15 +8,13 @@ import shlex
 import functools
 import subprocess
 from glob import glob
-from typing import List, Dict, Optional, Union, TextIO
+from typing import List, Dict, Optional, Union, TextIO, Any
 
 
 class Task(dict):
     """
     The Task object.  Stores all the task attributes and the run() method to
     execute the task.  Inherits dict to make it JSON serializable.
-
-    TODO: Don't inherit dict
     """
 
     def __init__(
@@ -32,34 +30,50 @@ class Task(dict):
         config_source: Optional[str] = None,
         parents: Optional[List] = None,
     ) -> None:
-        self["name"] = name
-        self["command"] = command
-        self["triggers"] = triggers
-        self["log"] = log
-        self["parent_success"] = parent_success
-        self["replay"] = replay
-        self["config_source"] = config_source
-        self["parents"] = parents  # For determining parent success
-        self["messages"] = messages
-        self["parameters"] = parameters
+        self.name = name
+        self.command = command
+        self.triggers = triggers
+        self.log = log
+        self.parent_success = parent_success
+        self.replay = replay
+        self.config_source = config_source
+        self.parents = parents  # For determining parent success
+        self.messages = messages
+        self.parameters = parameters
 
-        super().__init__()
+    def __repr__(self) -> str:
+        return (
+            f"NAME: {self.name}\n"
+            f"COMMAND: {self.command}\n"
+            f"TRIGGERS: {self.triggers}\n"
+            f"LOG: {self.log}\n"
+            f"PARENT_SUCCESS: {self.parent_success}\n"
+            f"REPLAY: {self.replay}\n"
+            f"CONFIG_SOURCE: {self.config_source}\n"
+            f"PARENTS: {self.parents}\n"
+            f"MESSAGES: {self.messages}\n"
+            f"PARAMETERS: {self.parameters}\n"
+        )
 
-    def __setitem__(self, key: str, value: Union[str, int, bool, List]) -> None:
-        if value and key == "command":
-            super().__setitem__(key, self._expandvars(str(value)))
-        elif value and key == "log":
-            filename = self._expandvars(str(value))
+    @property
+    def command(self) -> str:
+        return self._command
 
-            if os.path.isdir(filename):
-                name = self["name"].lower().replace(" ", "_")
-                log = os.path.join(filename, f"{name}.log")
-            else:
-                log = filename
+    @command.setter
+    def command(self, value: str) -> None:
+        self._command = self._expandvars(value)
 
-            super().__setitem__(key, log)
-        else:
-            super().__setitem__(key, value)
+    @property
+    def log(self) -> str:
+        return self._log
+
+    @log.setter
+    def log(self, value) -> None:
+        self._log = self._expandvars(str(value))
+
+        if os.path.isdir(self._log):
+            name = self.name.lower().replace(" ", "_")
+            self._log = os.path.join(self._log, f"{name}.log")
 
     def _expandvars(self, value: str) -> str:
         """
@@ -89,14 +103,12 @@ class Task(dict):
         that's frowned upon.  There's quite a bit of extra work done here
         because of that.
         """
-        if self["log"]:
-            out = open(self["log"], "a")  # type: Union[int, TextIO]
+        if self.log:
+            out = open(self.log, "a")  # type: Union[int, TextIO]
         else:
             out = subprocess.PIPE
 
-        cmd = shlex.split(self["command"]) + (
-            self["parameters"] if self["parameters"] else []
-        )
+        cmd = shlex.split(self.command) + (self.parameters if self.parameters else [])
 
         p = subprocess.Popen(
             cmd,
@@ -109,12 +121,26 @@ class Task(dict):
 
         return p.returncode
 
-    def log(self, text: str) -> None:
-        if self["log"]:
-            with open(self["log"], "a") as log:
+    def write_log(self, text: str) -> None:
+        if self.log:
+            with open(self.log, "a") as log:
                 log.write(text)
         else:
-            print(text)
+            print(text)  # TODO: Don't use print
+
+    def dict(self) -> Dict[str, Any]:
+        return {
+            "name": self.name,
+            "command": self.command,
+            "triggers": self.triggers,
+            "log": self.log,
+            "parent_success": self.parent_success,
+            "replay": self.replay,
+            "config_source": self.config_source,
+            "parents": self.parents,
+            "messages": self.messages,
+            "parameters": self.parameters,
+        }
 
 
 class Tasks:
@@ -136,12 +162,12 @@ class Tasks:
 
     @functools.lru_cache(maxsize=None)
     def get_tasks_by_trigger(self, trigger: str) -> List:
-        return [task for task in self.tasks if trigger in task["triggers"]]
+        return [task for task in self.tasks if trigger in task.triggers]
 
     @functools.lru_cache(maxsize=None)
     def get_task_by_name(self, name: str) -> Union[Task, None]:
         for task in self.tasks:
-            if task["name"] == name:
+            if task.name == name:
                 return task
 
         return None
@@ -199,11 +225,11 @@ class Tasks:
         _out = []
 
         for task in self.tasks:
-            for message in task["messages"]:
-                _out.append((task["name"], message))
+            for message in task.messages:
+                _out.append((task.name, message))
 
-            for trigger in task["triggers"]:
-                _in.append((task["name"], trigger))
+            for trigger in task.triggers:
+                _in.append((task.name, trigger))
 
         for overtex, oedge in _out:
             for ivertex, iedge in _in:
@@ -214,7 +240,7 @@ class Tasks:
         # the function is cached and we use the data in other places we don't
         # incur a heavy penalty
         for task in self.tasks:
-            task["parents"] = self.get_parent_tree(task["name"])[task["name"]]
+            task.parents = self.get_parent_tree(task.name)[task.name]
 
 
 class Edge:
