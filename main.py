@@ -2,29 +2,21 @@
 """
 Main Angora entry point.  Start each component of Angora from here.
 """
-import os
 import argparse
 import logging
-from typing import Dict
+import os
 from functools import partial
+from typing import Dict
 
 import kombu
-
+import uvicorn  # type: ignore
 from celery import Celery
 
-from task import Task, Tasks
-from message import Message
-from listener import Queue
+from angora import CONFIGS, EXCHANGE, HOST, PASSWORD, PORT, USER
 from db import db
-
-from angora import (
-    EXCHANGE,
-    USER,
-    PASSWORD,
-    HOST,
-    PORT,
-    CONFIGS,
-)
+from listener import Queue
+from message import Message
+from task import Task, Tasks
 
 TASKS = Tasks(CONFIGS)
 log = logging.getLogger("")
@@ -183,8 +175,6 @@ def clear_replay(args: argparse.Namespace) -> None:
 
 
 def start_celery(args: argparse.Namespace) -> None:
-    import logging
-
     _worker = app.Worker()
     _worker.setup_defaults(
         concurrency=args.concurrency,
@@ -196,8 +186,6 @@ def start_celery(args: argparse.Namespace) -> None:
 
 
 def start_web(args: argparse.Namespace) -> None:
-    import uvicorn  # type: ignore
-
     print(f"Starting web {args.module}")
 
     # Pass the app as a string so you can use the reload argument
