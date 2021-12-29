@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 
 from collections import defaultdict
 
-import uvicorn
+import uvicorn  # type: ignore
 
 from fastapi import FastAPI, Query
 from starlette.middleware.cors import CORSMiddleware
@@ -311,7 +311,7 @@ async def get_family_tree(name: str) -> Dict[str, Any]:
     children = await get_task_children_lastruntime(name)
     parents = await get_task_parents_lastruntime(name)
 
-    data = defaultdict(lambda: {})
+    data = defaultdict(lambda: {})  # type: Dict[str, Dict[str, Any]]
 
     for task_name, value in parents["data"].items():
         data[task_name] = {**data[task_name], **value}

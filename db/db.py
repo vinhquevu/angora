@@ -1,6 +1,7 @@
 """
 Angora Database
 """
+# type: ignore
 # pylint: disable=too-many-arguments,too-few-public-methods,no-member
 import os
 from typing import Optional, Generator, Dict, List, Union

@@ -2,9 +2,9 @@
 Angora Queue
 """
 import socket
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
-import kombu
+import kombu  # type: ignore
 
 
 class Queue:
