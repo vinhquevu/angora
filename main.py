@@ -19,7 +19,8 @@ from message import Message
 from task import Task, Tasks
 
 TASKS = Tasks(CONFIGS)
-log = logging.getLogger("")
+
+log = logging.getLogger()
 
 ##########
 # Celery #
@@ -111,20 +112,21 @@ def run(payload: Dict) -> int:
 
 
 def archive(payload: Dict, _: kombu.Message) -> None:
-    print(f"ARCHIVE: {payload}")
-    log.info(f"ARCHIVE: {payload}")
+    log.info("ARCHIVE: %s", payload)
+
     db.insert_message(**payload)
 
 
 def parse_task(payload: Dict, _: kombu.Message) -> None:
-    print(f"PARSE TASK: {payload}")
-    log.info(f"PARSE TASK: {payload}")
+    log.info("PARSE TASK: %s", payload)
+
     task_queue_name = os.uname()[1]
     tasks = TASKS.get_tasks_by_trigger(payload["message"])
 
     for task in tasks:
+        log.debug("Task found: %", task)
+
         task.parameters = payload["data"]
-        print(task)
         Message(EXCHANGE, task_queue_name, payload["message"], data=task.dict()).send(
             USER, PASSWORD, HOST, PORT, task_queue_name
         )
@@ -138,11 +140,36 @@ def maintain_db(args: argparse.Namespace) -> None:
     db.init_db()
 
 
+def clear_replay(args: argparse.Namespace) -> None:
+    """
+    Start the Replay queue.  The Replay queue is a RabbitMQ dead letter queue.
+    After a set amount of time, messages in the Replay queue are released to a
+    designated client task queue.  Creating the Replay queue is the same as
+    clearing it, if the queue doesn't exist when the clear() method runs then
+    the queue is created.
+    """
+    log.info("Creating/Clearing replay queue")
+    log.info("Server: %s", args.routing_key or os.uname()[1])
+    log.info("Exchange: %s", EXCHANGE)
+    log.info("Lifetime: %d ms", args.replayttl)
+
+    queue_args = {
+        "x-message-ttl": args.replayttl,
+        "x-dead-letter-exchange": EXCHANGE,
+        "x-dead-letter-routing-key": args.routing_key or os.uname()[1],
+    }
+    Queue("replay", "replay", queue_args=queue_args).clear()
+
+
 def start_server(args: argparse.Namespace) -> None:
     """
     Start the Angora server.  It's a RabbitMQ queue named "angora".  There are
     two callbacks, archive(), and parse_task().
     """
+    log.info("Starting Angora server")
+
+    clear_replay(args)
+
     callbacks = [archive, parse_task]
     Queue("angora", "angora").listen(callbacks)
 
@@ -154,24 +181,8 @@ def start_client(args: argparse.Namespace) -> None:
     function that calls run.delay().  The delay() executes run() as a Celery
     task.
     """
-    callbacks = [archive, lambda x, y: run.delay(x)]
+    callbacks = [archive, lambda x, _: run.delay(x)]
     Queue(args.queue_name, args.queue_name).listen(callbacks)
-
-
-def clear_replay(args: argparse.Namespace) -> None:
-    """
-    Start the Replay queue.  The Replay queue is a RabbitMQ dead letter queue.
-    After a set amount of time, messages in the Replay queue are released to a
-    designated client task queue.  Creating the Replay queue is the same as
-    clearing it, if the queue doesn't exist when the clear() method runs then
-    the queue is created.
-    """
-    queue_args = {
-        "x-message-ttl": args.ttl,
-        "x-dead-letter-exchange": EXCHANGE,
-        "x-dead-letter-routing-key": args.routing_key,
-    }
-    Queue("replay", "replay", queue_args=queue_args).clear()
 
 
 def start_celery(args: argparse.Namespace) -> None:
@@ -202,7 +213,26 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest="cmd")
     subparsers.required = True
 
+    replay_subparser = subparsers.add_parser("replay", help="Create/Clear replay queue")
+    replay_subparser.add_argument(
+        "--routing-key",
+        help="Name of queue that replay queue will release messages to, default is local host name",
+    )
+    replay_subparser.add_argument(
+        "--ttl",
+        type=int,
+        help="Queue lifetime in milliseconds, default is 10 minutes",
+        default=600000,
+    )
+    replay_subparser.set_defaults(func=clear_replay)
+
     server_subparser = subparsers.add_parser("server", help="Start Angora server")
+    server_subparser.add_argument(
+        "--replayttl",
+        type=int,
+        help="Queue lifetime in milliseconds, default is 10 minutes",
+        default=600000,
+    )
     server_subparser.set_defaults(func=start_server)
 
     client_subparser = subparsers.add_parser("client", help="Start Angora client")
@@ -213,20 +243,6 @@ if __name__ == "__main__":
     )
     client_subparser.set_defaults(func=start_client)
 
-    replay_subparser = subparsers.add_parser("replay", help="Create/Clear replay queue")
-    replay_subparser.add_argument(
-        "--routing-key",
-        help="Name of queue that replay queue will release messages to, default is local host name",
-        default=os.uname()[1],
-    )
-    replay_subparser.add_argument(
-        "--ttl",
-        type=int,
-        help="Queue lifetime in milliseconds, default is 10 minutes",
-        default=600000,
-    )
-    replay_subparser.set_defaults(func=clear_replay)
-
     db_subparser = subparsers.add_parser("initdb", help="Database maintenance")
     db_subparser.set_defaults(func=maintain_db)
 
@@ -235,7 +251,7 @@ if __name__ == "__main__":
     celery_subparser.add_argument(
         "--loglevel", choices=("INFO", "WARN", "DEBUG"), default="INFO"
     )
-    celery_subparser.add_argument("--logfile", default="./logs/celery.log")
+    celery_subparser.add_argument("--logfile", default="/dev/stdout")
     celery_subparser.set_defaults(func=start_celery)
 
     web_subparser = subparsers.add_parser("web", help="Start Angora web component")
@@ -246,4 +262,13 @@ if __name__ == "__main__":
     web_subparser.set_defaults(func=start_web)
 
     args = parser.parse_args()
+
+    handler = logging.FileHandler("/dev/stdout")
+    formatter = logging.Formatter(
+        "[%(asctime)s] %(levelname)s (%(name)s.%(funcName)s:%(lineno)d) %(message)s"
+    )
+    handler.setFormatter(formatter)
+    log.addHandler(handler)
+    log.setLevel(logging.INFO)
+
     args.func(args)

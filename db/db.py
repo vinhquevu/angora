@@ -4,21 +4,14 @@ Angora Database
 # type: ignore
 # pylint: disable=too-many-arguments,too-few-public-methods,no-member
 import os
-from typing import Optional, Generator, Dict, List, Union
-from datetime import datetime, date
 from contextlib import contextmanager
-from sqlalchemy import (
-    Column,
-    Integer,
-    Text,
-    DateTime,
-    create_engine,
-    cast,
-)
-from sqlalchemy.sql import func, and_
-from sqlalchemy.orm import scoped_session, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from datetime import date, datetime
+from typing import Dict, Generator, List, Optional, Union
 
+from sqlalchemy import Column, DateTime, Integer, Text, cast, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.sql import and_, func
 
 DATABASE = os.path.join(os.path.dirname(__file__), "log.db")
 ENGINE = create_engine("sqlite:///{}".format(DATABASE))

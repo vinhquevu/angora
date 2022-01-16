@@ -1,14 +1,15 @@
 """
 Angora Task
 """
+import functools
 import os
 import re
-import yaml
 import shlex
-import functools
 import subprocess
 from glob import glob
-from typing import List, Dict, Optional, Union, TextIO, Any
+from typing import Any, Dict, List, Optional, TextIO, Union
+
+import yaml
 
 
 class Task(dict):

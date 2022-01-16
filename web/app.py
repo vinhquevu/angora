@@ -1,16 +1,14 @@
 #! /usr/bin/env python3
-import os
 import argparse
-from datetime import datetime, date
+import os
 from collections import OrderedDict
+from datetime import date, datetime
 
-import uvicorn
 import httpx
-
+import uvicorn
+from starlette.applications import Starlette
 from starlette.responses import PlainTextResponse
 from starlette.templating import Jinja2Templates
-from starlette.applications import Starlette
-
 
 API = "localhost:55550"
 template_dir = os.path.join(os.path.dirname(__file__), "templates")

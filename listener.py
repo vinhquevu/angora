@@ -1,8 +1,8 @@
 """
 Angora Queue
 """
-import socket
 import logging
+import socket
 from typing import Dict, Optional
 
 import kombu  # type: ignore

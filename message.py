@@ -2,6 +2,7 @@
 Angora Message
 """
 from typing import Dict, Optional, Union
+
 from kombu import Connection, Producer  # type: ignore
 
 

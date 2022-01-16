@@ -1,28 +1,17 @@
 #! /usr/bin/env python3
-import re
 import argparse
-
+import re
+from collections import defaultdict
 from typing import Any, Dict, List
 
-from collections import defaultdict
-
 import uvicorn  # type: ignore
-
 from fastapi import FastAPI, Query
 from starlette.middleware.cors import CORSMiddleware
 
-
-from angora import (
-    EXCHANGE,
-    USER,
-    PASSWORD,
-    HOST,
-    PORT,
-    CONFIGS,
-)
+from angora import CONFIGS, EXCHANGE, HOST, PASSWORD, PORT, USER
 from angora.db import db
-from angora.task import Tasks
 from angora.message import Message
+from angora.task import Tasks
 
 app = FastAPI(version="0.0.1")
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
