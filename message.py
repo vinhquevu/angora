@@ -10,13 +10,13 @@ class Message:
     Message object
     """
 
-    __slots__ = [
+    __slots__ = (
         "exchange",
         "queue",
         "message",
         "time_stamp",
         "data",
-    ]
+    )
 
     def __init__(
         self,
