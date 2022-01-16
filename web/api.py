@@ -74,10 +74,10 @@ async def reload_tasks():
 
 @app.get("/tasks/today/notrun")
 async def get_tasks_notrun():
-    all_tasks = TASKS.tasks
+    # all_tasks = TASKS.tasks
     tasks_today = {_["name"] for _ in db.get_tasks_today()}
 
-    notrun = [task for task in all_tasks if task["name"] not in tasks_today]
+    notrun = [task for task in TASKS if task["name"] not in tasks_today]
 
     return {"data": notrun}
 

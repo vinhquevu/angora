@@ -149,24 +149,34 @@ class Tasks:
 
     Once the list of tasks is constructed, this class has several methods to
     make accessing tasks in different ways simpler.
-
-    TODO: Make into interable
     """
 
     def __init__(self, configs: str) -> None:
         self.configs = configs
-        self.tasks = []  # type: List[Task]
+        self._tasks = []  # type: List[Task]
         self.__tree = Graph()
 
         self.reload()
 
+    def __iter__(self):
+        self.__index = 0
+        return self
+
+    def __next__(self):
+        if self.__index < len(self._tasks):
+            result = self._tasks[self.__index]
+            self.__index += 1
+            return result
+        else:
+            raise StopIteration
+
     @functools.lru_cache(maxsize=None)
     def get_tasks_by_trigger(self, trigger: str) -> List:
-        return [task for task in self.tasks if trigger in task.triggers]
+        return [task for task in self._tasks if trigger in task.triggers]
 
     @functools.lru_cache(maxsize=None)
     def get_task_by_name(self, name: str) -> Union[Task, None]:
-        for task in self.tasks:
+        for task in self._tasks:
             if task.name == name:
                 return task
 
@@ -206,7 +216,7 @@ class Tasks:
         don't store the immediate children because there isn't a use for that
         data yet.
         """
-        self.tasks.clear()
+        self._tasks.clear()
         self.get_tasks_by_trigger.cache_clear()
         self.get_task_by_name.cache_clear()
         self.get_child_tree.cache_clear()
@@ -219,27 +229,21 @@ class Tasks:
                 for task in tmp:
                     task["config_source"] = os.path.basename(config)
 
-                    self.tasks.append(Task(**task))
+                    self._tasks.append(Task(**task))
 
-        _in = []
-        _out = []
+        for task in self._tasks:
+            out_ = [(task.name, message) for message in task.messages]
+            in_ = [(task.name, trigger) for trigger in task.triggers]
 
-        for task in self.tasks:
-            for message in task.messages:
-                _out.append((task.name, message))
-
-            for trigger in task.triggers:
-                _in.append((task.name, trigger))
-
-        for overtex, oedge in _out:
-            for ivertex, iedge in _in:
+        for overtex, oedge in out_:
+            for ivertex, iedge in in_:
                 if oedge == iedge:
                     self.__tree.add_edge(Edge(iedge, overtex, ivertex))
 
         # get_parent_tree is recursive and we only need the first level, because
         # the function is cached and we use the data in other places we don't
         # incur a heavy penalty
-        for task in self.tasks:
+        for task in self._tasks:
             task.parents = self.get_parent_tree(task.name)[task.name]
 
 
