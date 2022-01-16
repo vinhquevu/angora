@@ -2,9 +2,12 @@
 Angora Queue
 """
 import socket
+import logging
 from typing import Dict, Optional
 
 import kombu  # type: ignore
+
+log = logging.getLogger(__name__)
 
 
 class Queue:
@@ -62,14 +65,16 @@ class Queue:
         Start a listener and handle messeages with the callback(s).  If the
         queue does not already exist in the exchange, it will be created.
         """
+        log.info("Staring listener")
+        log.info("Exchange: %s", self.queue.exchange.name)
+        log.info("Queue: %s", self.queue.name)
         with kombu.Connection(self.connection_str) as conn:
             with kombu.Consumer(conn, [self.queue], callbacks=callbacks, no_ack=True):
                 try:
-                    print("STARTING LISTENER")
                     for _ in kombu.eventloop(conn):
                         pass
                 except KeyboardInterrupt:
-                    print("\nExiting\n")
+                    log.info("Exiting")
 
     def clear(self) -> None:
         """
@@ -77,9 +82,13 @@ class Queue:
         it will be created.  If the queue doesn't exist, this is the same as
         creating an empty queue with no listener.
         """
+        log.info("Clearing queue")
+        log.info("Exchange: %s", self.queue.exchange.name)
+        log.info("Queue: %s", self.queue.name)
+
         with kombu.Connection(self.connection_str) as conn:
             with kombu.Consumer(conn, [self.queue], no_ack=True):
                 try:
                     conn.drain_events(timeout=2)
                 except (socket.timeout, NotImplementedError):
-                    print("\nQueue has been drained\n")
+                    log.info("Complete")
