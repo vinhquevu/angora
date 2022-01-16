@@ -4,6 +4,8 @@
 (-.-)
 o_(")(")
 ```
+Currently a work in progress.
+
 Angora is a job execution system based on message queues.  This attempts to be a
 low code application, although everyone is encouraged to customize and make it
 their own. The jobs, a.k.a. tasks, are just shell commands executed via
