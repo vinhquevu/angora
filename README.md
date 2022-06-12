@@ -123,7 +123,15 @@ You need to start a Celery worker on each client.  You can do so using the
 standard command line or from an option in `main.py`.  The former may provide
 more options not available under `main.py`.
 
-`celery -A angora.main worker --concurrency=8 --loglevel=debug -Ofair 2>&1` or `./main.py celery`
+`celery -A angora.main worker --concurrency=8 --loglevel=debug -O fair 2>&1` or `./main.py celery`
+
+You can start multiple workers, they will read from the client in a round robin
+fashion.  If you do you multiple workers, each needs a unique name.
+
+```
+celery -A angora.main worker --concurrency=8 --loglevel=debug -O fair --hostname worker2 2>&1
+./main.py celery --name worker2
+```
 
 #### --concurrency
 You'll want to set this number at something greater than one in order to
@@ -319,7 +327,9 @@ COMING SOON
 2. index tasks by name for faster lookup
 3. index tasks by trigger for faster lookup
 4. Create the concept of a unique run id
-5. Control EVERYTHING from the API
+5. Control EVERYTHING from the API (replace yaml with db?)
 6. Test with Redis
 7. Create replay queue in server
 8. Execute a task over a date range
+9. Revoke task
+10. Drain queue is different?
