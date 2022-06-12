@@ -9,6 +9,7 @@ from functools import partial
 from typing import Dict
 
 import kombu
+from kombu.log import LOG_LEVELS
 import uvicorn  # type: ignore
 from celery import Celery
 
@@ -43,8 +44,7 @@ def run(payload: Dict) -> int:
     """
     trigger = payload["message"]
     task = Task(**payload["data"])
-    print(f"RUN: {task}")
-    log.info(f"RUN: {task}")
+    log.info("RUN: %s", task)
 
     if payload["queue"] == "replay":
         status = payload["queue"]
@@ -148,15 +148,19 @@ def clear_replay(args: argparse.Namespace) -> None:
     clearing it, if the queue doesn't exist when the clear() method runs then
     the queue is created.
     """
+    try:
+        server = args.routing_key
+    except AttributeError:
+        server = os.uname()[1]
     log.info("Creating/Clearing replay queue")
-    log.info("Server: %s", args.routing_key or os.uname()[1])
+    log.info("Server: %s", server)
     log.info("Exchange: %s", EXCHANGE)
     log.info("Lifetime: %d ms", args.replayttl)
 
     queue_args = {
         "x-message-ttl": args.replayttl,
         "x-dead-letter-exchange": EXCHANGE,
-        "x-dead-letter-routing-key": args.routing_key or os.uname()[1],
+        "x-dead-letter-routing-key": server,
     }
     Queue("replay", "replay", queue_args=queue_args).clear()
 
@@ -186,18 +190,19 @@ def start_client(args: argparse.Namespace) -> None:
 
 
 def start_celery(args: argparse.Namespace) -> None:
-    _worker = app.Worker()
-    _worker.setup_defaults(
-        concurrency=args.concurrency,
-        loglevel=logging.getLevelName(args.loglevel),
-        logfile=args.logfile,
-        optimization="fair",
+    app.worker_main(
+        argv=[
+            "worker",
+            f"--concurrency={args.concurrency}",
+            f"--loglevel={args.loglevel}",
+            f"--logfile={args.logfile}",
+            "-Ofair",
+        ]
     )
-    _worker.start()
 
 
 def start_web(args: argparse.Namespace) -> None:
-    print(f"Starting web {args.module}")
+    log.info(f"Starting web %s", args.module)
 
     # Pass the app as a string so you can use the reload argument
     uvicorn.run(
@@ -213,6 +218,7 @@ if __name__ == "__main__":
     subparsers = parser.add_subparsers(dest="cmd")
     subparsers.required = True
 
+    # Replay
     replay_subparser = subparsers.add_parser("replay", help="Create/Clear replay queue")
     replay_subparser.add_argument(
         "--routing-key",
@@ -226,6 +232,7 @@ if __name__ == "__main__":
     )
     replay_subparser.set_defaults(func=clear_replay)
 
+    # Server
     server_subparser = subparsers.add_parser("server", help="Start Angora server")
     server_subparser.add_argument(
         "--replayttl",
@@ -235,6 +242,7 @@ if __name__ == "__main__":
     )
     server_subparser.set_defaults(func=start_server)
 
+    # Client
     client_subparser = subparsers.add_parser("client", help="Start Angora client")
     client_subparser.add_argument(
         "--queue-name",
@@ -243,17 +251,24 @@ if __name__ == "__main__":
     )
     client_subparser.set_defaults(func=start_client)
 
+    # Database
     db_subparser = subparsers.add_parser("initdb", help="Database maintenance")
     db_subparser.set_defaults(func=maintain_db)
 
+    # Celery
     celery_subparser = subparsers.add_parser("celery", help="Start Celery worker")
+    celery_subparser.add_argument(
+        "--name",
+        help="When using multiple workers, each one needs a unique name",
+    )
     celery_subparser.add_argument("--concurrency", type=int, default=8)
     celery_subparser.add_argument(
         "--loglevel", choices=("INFO", "WARN", "DEBUG"), default="INFO"
     )
-    celery_subparser.add_argument("--logfile", default="/dev/stdout")
+    celery_subparser.add_argument("--logfile", default="./logs/celery_worker_%h_%d.log")
     celery_subparser.set_defaults(func=start_celery)
 
+    # Web
     web_subparser = subparsers.add_parser("web", help="Start Angora web component")
     web_subparser.add_argument("module", help="Module name", choices=("api", "app"))
     web_subparser.add_argument("--host", default="0.0.0.0")
@@ -263,6 +278,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Logging
     handler = logging.FileHandler("/dev/stdout")
     formatter = logging.Formatter(
         "[%(asctime)s] %(levelname)s (%(name)s.%(funcName)s:%(lineno)d) %(message)s"
