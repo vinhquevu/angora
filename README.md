@@ -36,6 +36,7 @@ specfic environment.
 
 ### Python Libraries
 The following libraries are required.
+- Kombu, `pip install kombu`
 - Celery, `pip install celery`
 - PyYaml, `pip install pyyaml`
 - SQLAlchemy, `pip install sqlalchemy`
